@@ -1,8 +1,10 @@
-"""Read-only Evoqua 700P Modbus TCP client (Python standard library only)."""
+"""700 P Modbus TCP: documented reads and explicitly requested writes."""
 
 from __future__ import annotations
 
 import asyncio
+from contextlib import asynccontextmanager
+import time
 from dataclasses import dataclass, field
 import math
 import re
@@ -43,39 +45,67 @@ class ReadPoint:
     precision: int = 2
 
 
-# The Node-RED sequencers use different addressing and FLOAT orders in these
-# two groups. Do not apply a global offset or byte order to this profile.
-FLOW_POINTS = {
-    "chlorine": ReadPoint(100, "Chlor", "mg/L", "ABCD"),
-    "ph": ReadPoint(115, "pH", None, "ABCD"),
-    "orp": ReadPoint(130, "Redox", "mV", "ABCD", 0),
-    "temperature": ReadPoint(175, "Temperatur", "°C", "ABCD", 1),
-    "chlorine_current_setpoint": ReadPoint(111, "Chlor aktueller Sollwert", "mg/L", "ABCD"),
-    "ph_current_setpoint": ReadPoint(126, "pH aktueller Sollwert", None, "ABCD"),
-    "chlorine_dosing": ReadPoint(113, "Chlor Dosierleistung", "%", "ABCD", 1),
-    "ph_dosing": ReadPoint(128, "pH Dosierleistung", "%", "ABCD", 1),
-    "chlorine_setpoint": ReadPoint(999, "Chlor Sollwert (W)", "mg/L"),
-    "chlorine_xp": ReadPoint(1001, "Chlor P-Anteil (Xp)", "%", precision=1),
-    "chlorine_tn": ReadPoint(1003, "Chlor I-Anteil (Tn)", "min", precision=1),
-    "ph_setpoint": ReadPoint(1005, "pH Sollwert (W)"),
-    "ph_xp": ReadPoint(1007, "pH P-Anteil (Xp)", "%", precision=1),
-    "ph_tn": ReadPoint(1009, "pH I-Anteil (Tn)", "min", precision=1),
-}
-for _key, _label, _address, _unit in (
-    ("chlorine", "Chlor", 1049, "mg/L"),
-    ("ph", "pH", 1061, None),
-    ("orp", "Redox", 1073, "mV"),
-    ("temperature", "Temperatur", 1109, "°C"),
-):
-    for _i, (_suffix, _description) in enumerate((
+# Manual WT.050.810.010.DD.IM.0620, section 4.6, pp. 30-37.
+# A 4xxxxx number is one-based: wire = manual - 400001. All documented
+# FLOAT/UINT32 values use low word first, bytes within words big endian (CDAB).
+CHEMICALS = ("chlorine", "ph", "orp", "total_chlorine", "conductivity")
+CONTROL_CHANNELS = ("chlorine", "ph", "total_chlorine", "conductivity")
+FLOW_POINTS = {}
+POINT_CHANNEL = {}
+UNIT_POINTS = {}
+for _key, _channel in CHANNELS.items():
+    _base = _channel.register - 400001
+    UNIT_POINTS[f"{_key}_unit"] = _base + 2
+    for _suffix, _label, _offset in (
+        ("", "", 0), ("_range_min", "Messbereich Anfang", 7),
+        ("_range_max", "Messbereich Ende", 9),
+        ("_current_setpoint", "aktueller Sollwert", 11),
+        ("_dosing", "Dosierleistung", 13),
+    ):
+        if _key not in CHEMICALS and _offset > 9:
+            continue  # These slots are reserved, not data points.
+        _point_key = _key + _suffix
+        FLOW_POINTS[_point_key] = ReadPoint(
+            _base + _offset, f"{_channel.label} {_label}".strip(),
+            "%" if _suffix == "_dosing" else None,
+            precision=_channel.precision,
+        )
+        POINT_CHANNEL[_point_key] = _key
+FLOW_POINTS["flocculation_dosing"] = ReadPoint(189, "Flockung Dosierleistung", "%", precision=1)
+
+
+@dataclass(frozen=True)
+class WritePoint:
+    address: int
+    channel: str
+    kind: str
+
+
+WRITE_POINTS = {}
+for _i, _key in enumerate(CONTROL_CHANNELS):
+    for _j, (_suffix, _label, _unit) in enumerate((
+        ("setpoint", "Sollwert (W)", None), ("xp", "P-Anteil (Xp)", "%"),
+        ("tn", "I-Anteil (Tn)", "min"),
+    )):
+        _point_key = f"{_key}_{_suffix}"
+        _address = 999 + _i * 6 + _j * 2
+        FLOW_POINTS[_point_key] = ReadPoint(_address, f"{CHANNELS[_key].label} {_label}", _unit)
+        POINT_CHANNEL[_point_key] = _key
+        WRITE_POINTS[_point_key] = WritePoint(_address, _key, _suffix)
+for _i, _key in enumerate((*CHEMICALS, "temperature")):
+    for _j, (_suffix, _label) in enumerate((
         ("min1", "Min1"), ("max1", "Max1"), ("hyst1", "Hysterese1"),
         ("min2", "Min2"), ("max2", "Max2"), ("hyst2", "Hysterese2"),
     )):
-        if _key == "temperature" and _i >= 3:
+        if _key == "temperature" and _j >= 3:
             break
-        FLOW_POINTS[f"{_key}_{_suffix}"] = ReadPoint(
-            _address + 2 * _i, f"{_label} {_description}", _unit,
-        )
+        _point_key = f"{_key}_{_suffix}"
+        _address = 1049 + _i * 12 + _j * 2
+        FLOW_POINTS[_point_key] = ReadPoint(_address, f"{CHANNELS[_key].label} {_label}")
+        POINT_CHANNEL[_point_key] = _key
+        WRITE_POINTS[_point_key] = WritePoint(_address, _key, _suffix)
+FUNCTION_ADDRESS = 1999
+SHOCK_MASK = 0x0200
 
 MODE_NAMES = (
     "Hand", "Automatik", "Regler aus", "Adaption läuft",
@@ -97,18 +127,29 @@ ERROR_NAMES = {
     27: "Stellglied stetig Fehler", 28: "Flockung Fehler", 29: "Hochchlorung Fehler",
     30: "Analog Hardware Fehler", 31: "Speicherfehler",
 }
+MODE_KEYS = {"chlorine": "operating_mode", "ph": "ph_operating_mode",
+             "total_chlorine": "total_chlorine_operating_mode",
+             "conductivity": "conductivity_operating_mode"}
+ERROR_KEYS = {key: ("error_text" if key == "chlorine" else f"{key}_error_text") for key in CHEMICALS}
+RAW_STATUS = {"alarm_word": 299, "input_word": 300, "relay_word": 301, "aux_relay_word": 302,
+              **{f"{key}_mode_code": 303 + i for i, key in enumerate(CONTROL_CHANNELS)}}
 FLOW_TEXTS = {
     "system_name": "Systemname", "software_version": "Software-Version",
     "device_date": "Gerätedatum", "device_time": "Gerätezeit",
-    "operating_mode": "Betriebsart", "error_text": "Fehler",
-    "chlorine_error_code": "Fehlercode",
+    **{key: f"{CHANNELS[ch].label} Betriebsart" for ch, key in MODE_KEYS.items()},
+    **{key: f"{CHANNELS[ch].label} Fehler" for ch, key in ERROR_KEYS.items()},
+    **{f"{ch}_error_code": f"{CHANNELS[ch].label} Fehlercode" for ch in CHEMICALS},
+    **{key: f"{CHANNELS[key.removesuffix('_unit')].label} Einheit" for key in UNIT_POINTS},
+    **{key: key.replace("_", " ") for key in RAW_STATUS},
+    "function_word": "Funktionswort",
 }
 FLOW_BINARIES = {
     **{f"di{i}": f"Digitaleingang {i}" for i in range(1, 4)},
-    **{f"alarm{i}": f"Alarm {i}" for i in range(1, 5)},
+    **{f"alarm{i}": f"Alarm {i}" for i in range(1, 9)},
     **{f"relay{k}": f"Relais K{k}" for k in (*range(1, 9), *range(21, 25))},
     "sample_water": "Messwasser", "sample_water_stop": "Messwasser-Stopp",
-    "shock_chlorination": "Stoßchlorung", "chlorine_problem": "Störung",
+    "shock_chlorination": "Stoßchlorung",
+    **{f"{ch}_problem": f"{CHANNELS[ch].label} Störung" for ch in CHEMICALS},
 }
 
 
@@ -142,7 +183,7 @@ class Snapshot:
     measurements: dict[str, Measurement]
     status: dict[int, int] = field(default_factory=dict)
     values: dict[str, str | int | None] = field(default_factory=dict)
-    binaries: dict[str, bool] = field(default_factory=dict)
+    binaries: dict[str, bool | None] = field(default_factory=dict)
     details: dict[str, list[str]] = field(default_factory=dict)
 
 
@@ -175,7 +216,7 @@ def normalize_unit(unit: str) -> str | None:
 
 
 class EvoquaClient:
-    """One TCP connection per snapshot; only function code 03 is implemented.
+    """Serialized connections; FC03 reads, allowlisted FC16/FC06 writes.
 
     Connections close on success, timeout, cancellation and malformed replies.
     A new connection on the next poll recovers from controller restarts.
@@ -208,6 +249,7 @@ class EvoquaClient:
         self.profile = profile
         self._transaction = 0
         self._lock = asyncio.Lock()
+        self._last_write = -math.inf
 
     async def _read(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
@@ -216,9 +258,15 @@ class EvoquaClient:
         address = register - self.register_base
         if not 1 <= count <= 125 or not 0 <= address <= 65536 - count:
             raise ValueError("Invalid register range")
+        pdu = await self._exchange(reader, writer, 3, struct.pack(">HH", address, count), address)
+        if len(pdu) != 2 + count * 2 or pdu[1] != count * 2:
+            raise EvoquaError("Invalid FC03 response or register count")
+        return list(struct.unpack(f">{count}H", pdu[2:]))
+
+    async def _exchange(self, reader, writer, function, payload, address):
         self._transaction = (self._transaction + 1) % 65536
         transaction = self._transaction
-        request = struct.pack(">HHHBBHH", transaction, 0, 6, self.unit_id, 3, address, count)
+        request = struct.pack(">HHHBB", transaction, 0, len(payload) + 2, self.unit_id, function) + payload
         async with asyncio.timeout(self.timeout):
             writer.write(request)
             await writer.drain()
@@ -229,11 +277,30 @@ class EvoquaClient:
             if not 3 <= length <= 254:
                 raise EvoquaError("Invalid Modbus TCP response length")
             pdu = await reader.readexactly(length - 1)
-        if pdu[0] == 0x83 and len(pdu) == 2:
+        if pdu[0] == function | 0x80 and len(pdu) == 2:
             raise ModbusError(pdu[1], address)
-        if pdu[0] != 3 or len(pdu) != 2 + count * 2 or pdu[1] != count * 2:
-            raise EvoquaError("Invalid FC03 response or register count")
-        return list(struct.unpack(f">{count}H", pdu[2:]))
+        if pdu[0] != function:
+            raise EvoquaError("Unexpected Modbus function")
+        return pdu
+
+    @asynccontextmanager
+    async def _connection(self):
+        writer = None
+        async with self._lock:
+            try:
+                async with asyncio.timeout(self.timeout):
+                    reader, writer = await asyncio.open_connection(self.host, self.port)
+                yield reader, writer
+            except (OSError, TimeoutError, asyncio.IncompleteReadError) as err:
+                raise EvoquaError(f"Modbus TCP communication failed: {err}") from err
+            finally:
+                if writer is not None:
+                    writer.close()
+                    try:
+                        async with asyncio.timeout(1):
+                            await writer.wait_closed()
+                    except (OSError, TimeoutError):
+                        pass
 
     async def async_snapshot(
         self, channels: list[str] | tuple[str, ...], include_status: bool = False,
@@ -285,49 +352,176 @@ class EvoquaClient:
                     except (OSError, TimeoutError):
                         pass
 
-    async def _read_flow_snapshot(self, reader, writer) -> Snapshot:
-        """Read the Node-RED profile with field-specific wire decoding."""
-        async def read(address, count):
-            return await self._read(reader, writer, address + self.register_base, count)
-
-        # The system name is user-editable: the real installation calls it Pool.
-        identity = await read(0, 15)
+    async def _identity(self, reader, writer):
+        identity = await self._read(reader, writer, 400001, 15)
         name = flow_text(identity[:10])
         software = flow_text(identity[10:15], r"V\s*:?\s*\d+\.\d+")
         version = re.search(r"(\d+)\.(\d+)", software)
         if not name or not version or tuple(map(int, version.groups())) < (1, 31):
             raise InvalidDevice("Missing system name or unsupported firmware identification")
+        return name, software
+
+    async def _read_flow_snapshot(self, reader, writer) -> Snapshot:
+        """All meaningful registers in the v2 manual; reserved slots excluded."""
+        async def read(address, count):
+            return await self._read(reader, writer, 400001 + address, count)
+
+        async def optional(address, count):
+            try:
+                return await read(address, count)
+            except ModbusError as err:
+                if err.code not in (2, 3):
+                    raise
+                return None  # Optional channel/register not fitted or supported.
+
+        name, software = await self._identity(reader, writer)
+        values = {"system_name": name, "software_version": software,
+                  "device_date": flow_text(await read(15, 5), r"\d{2}\.\d{2}\.\d{4}"),
+                  "device_time": flow_text(await read(20, 3), r"\d{2}:\d{2}")}
         measurements = {}
-        for key, point in FLOW_POINTS.items():
-            measurements[key] = Measurement(
-                decode_float(await read(point.address, 2), point.order), point.unit,
-            )
-        alarms = (await read(299, 2))[0]
-        inputs = (await read(300, 2))[0]
-        relay1 = (await read(301, 1))[0]
-        relay2 = (await read(302, 1))[0]
-        mode = (await read(303, 2))[0]
-        error = int.from_bytes(ordered_bytes(await read(307, 2), "CDAB"), "big")
-        modes = [label for bit, label in enumerate(MODE_NAMES) if mode & (1 << bit)]
-        errors = [ERROR_NAMES.get(bit, f"Unbekanntes Bit {bit}") for bit in range(32) if error & (1 << bit)]
-        values = {
-            "system_name": name, "software_version": software,
-            "device_date": flow_text(await read(15, 5), r"\d{2}\.\d{2}\.\d{4}"),
-            "device_time": flow_text(await read(20, 3), r"\d{2}:\d{2}"),
-            "operating_mode": compact_flags(modes, "Keine Aktivität"),
-            "error_text": compact_flags(errors, "Keine Fehler"),
-            "chlorine_error_code": error,
-        }
+        units = {}
+        for key, channel in CHANNELS.items():
+            words = await optional(channel.register - 400001, 15 if key in CHEMICALS else 11)
+            unit = normalize_unit(flow_text(words[2:7])) if words else None
+            units[key] = unit
+            values[f"{key}_unit"] = flow_text(words[2:7]) if words else None
+            for point_key, point in FLOW_POINTS.items():
+                if point.address >= 999 or POINT_CHANNEL.get(point_key) != key:
+                    continue
+                offset = point.address - (channel.register - 400001)
+                value = decode_float(words[offset:offset+2], "CDAB") if words else None
+                measurements[point_key] = Measurement(value, point.unit or unit)
+        floc = await optional(189, 2)
+        measurements["flocculation_dosing"] = Measurement(decode_float(floc, "CDAB") if floc else None, "%")
+        for key, point in WRITE_POINTS.items():
+            words = await optional(point.address, 2)
+            measurements[key] = Measurement(decode_float(words, "CDAB") if words else None,
+                                            FLOW_POINTS[key].unit or units[point.channel])
+        words = await read(299, 18)
+        status = {400300 + i: word for i, word in enumerate(words[:8])}
+        values.update({key: words[address - 299] for key, address in RAW_STATUS.items()})
+        alarms, inputs, relay1, relay2 = words[:4]
+        details = {}
+        for i, channel in enumerate(CONTROL_CHANNELS):
+            mode = words[4 + i]
+            flags = [label for bit, label in enumerate(MODE_NAMES) if mode & (1 << bit)]
+            key = MODE_KEYS[channel]
+            values[key] = compact_flags(flags, "Keine Aktivität")
+            details[key] = flags
         binaries = {
             **{f"di{i}": bool(inputs & (1 << (i - 1))) for i in range(1, 4)},
-            **{f"alarm{i}": bool(alarms & (1 << (i - 1))) for i in range(1, 5)},
+            **{f"alarm{i}": bool(alarms & (1 << (i - 1))) for i in range(1, 9)},
             **{f"relay{i+1}": bool(relay1 & (1 << i)) for i in range(8)},
             **{f"relay{i+21}": bool(relay2 & (1 << i)) for i in range(4)},
             "sample_water": not bool(inputs & 8), "sample_water_stop": bool(inputs & 8),
-            "shock_chlorination": bool(mode & 0x8000), "chlorine_problem": bool(error),
+            "shock_chlorination": bool(words[4] & 0x8000),
         }
-        return Snapshot(name, software, measurements, {400308: error, 400301: inputs},
-                        values, binaries, {"operating_mode": modes, "error_text": errors})
+        for i, channel in enumerate(CHEMICALS):
+            error = int.from_bytes(ordered_bytes(words[8+i*2:10+i*2], "CDAB"), "big")
+            status[400308 + i*2] = error
+            flags = [ERROR_NAMES.get(bit, f"Unbekanntes Bit {bit}") for bit in range(32) if error & (1 << bit)]
+            key = ERROR_KEYS[channel]
+            values[key] = compact_flags(flags, "Keine Fehler")
+            values[f"{channel}_error_code"] = error
+            details[key] = flags
+            binaries[f"{channel}_problem"] = bool(error)
+        function = await optional(FUNCTION_ADDRESS, 1)
+        values["function_word"] = function[0] if function else None
+        return Snapshot(name, software, measurements, status, values, binaries, details)
+
+    async def async_write_number(self, key: str, value: float) -> bool:
+        """Write one allowlisted FLOAT, fresh bounds, no retry, verified readback.
+
+        False means identical encoded value: no EEPROM write was sent.
+        Hysteresis is the engineering-unit FLOAT, not a guessed digit conversion.
+        The device remains responsible for its 1..25 display-digit constraint.
+        """
+        if self.profile != FLOW_PROFILE or self.register_base != 400001 or key not in WRITE_POINTS:
+            raise EvoquaError("This register is not writable")
+        if isinstance(value, bool) or not isinstance(value, (float, int)) or not math.isfinite(value):
+            raise EvoquaError("Enter a finite numeric value")
+        point = WRITE_POINTS[key]
+        async with self._connection() as (reader, writer):
+            await self._identity(reader, writer)
+            current = await self._read(reader, writer, 400001 + point.address, 2)
+            low, high = await self._write_bounds(reader, writer, key)
+            if not low <= value <= high:
+                raise EvoquaError(f"Value must be between {low:g} and {high:g}")
+            try:
+                canonical = struct.pack(">f", value)
+            except (OverflowError, struct.error) as err:
+                raise EvoquaError("Value cannot be encoded as FLOAT32") from err
+            encoded = canonical[2:] + canonical[:2]
+            if encoded == struct.pack(">HH", *current):
+                return False
+            self._reserve_write()
+            payload = struct.pack(">HHB", point.address, 2, 4) + encoded
+            try:
+                reply = await self._exchange(reader, writer, 16, payload, point.address)
+                if reply != struct.pack(">BHH", 16, point.address, 2):
+                    raise EvoquaError("Invalid FC16 acknowledgement")
+                result = await self._read(reader, writer, 400001 + point.address, 2)
+                if struct.pack(">HH", *result) != encoded:
+                    raise EvoquaError("Device readback differs from requested value")
+            except (EvoquaError, OSError, TimeoutError, asyncio.IncompleteReadError) as err:
+                raise EvoquaError("Write outcome not confirmed; read device state before another command. " + str(err)) from err
+            return True
+
+    async def _write_bounds(self, reader, writer, key):
+        point = WRITE_POINTS[key]
+        if point.kind == "xp":
+            return 0, 1000
+        if point.kind == "tn":
+            return 0, 100
+        words = await self._read(reader, writer, CHANNELS[point.channel].register + 7, 4)
+        low, high = decode_float(words[:2], "CDAB"), decode_float(words[2:], "CDAB")
+        if low is None or high is None or low >= high:
+            raise EvoquaError("Cannot validate the device measuring range")
+        if point.kind.startswith("hyst"):
+            return 0.000001, high - low
+        if point.kind.startswith(("min", "max")):
+            other_kind = ("max" if point.kind.startswith("min") else "min") + point.kind[-1]
+            other = WRITE_POINTS[f"{point.channel}_{other_kind}"]
+            peer = decode_float(await self._read(reader, writer, 400001 + other.address, 2), "CDAB")
+            if peer is None or not low <= peer <= high:
+                raise EvoquaError("Cannot validate the paired limit")
+            if point.kind.startswith("min"):
+                high = peer
+            else:
+                low = peer
+        return low, high
+
+    def _reserve_write(self):
+        now = time.monotonic()
+        if now - self._last_write < 1:
+            raise EvoquaError("Wait at least one second between write commands")
+        self._last_write = now  # Also throttle uncertain/failed write attempts.
+
+    async def async_shock_toggle(self) -> None:
+        """Send the documented Start/Stop command, never infer on/off semantics.
+
+        Bit 9 is a command, actual running state is mode bit 15. No automatic
+        clearing/retry, and no repeated write when a command is still pending.
+        """
+        if self.profile != FLOW_PROFILE or self.register_base != 400001:
+            raise EvoquaError("Writes require the documented 700 P profile")
+        async with self._connection() as (reader, writer):
+            await self._identity(reader, writer)
+            current = (await self._read(reader, writer, 402000, 1))[0]
+            if current & SHOCK_MASK:
+                raise EvoquaError("Start/Stop command is still set; inspect the device before repeating")
+            self._reserve_write()
+            value = current | SHOCK_MASK
+            payload = struct.pack(">HH", FUNCTION_ADDRESS, value)
+            try:
+                reply = await self._exchange(reader, writer, 6, payload, FUNCTION_ADDRESS)
+                if reply != bytes([6]) + payload:
+                    raise EvoquaError("Invalid FC06 acknowledgement")
+                # The command can self-clear; read actual operating flags instead
+                # of requiring a latched command bit or optimistically toggling HA.
+                await self._read(reader, writer, 400304, 1)
+            except (EvoquaError, OSError, TimeoutError, asyncio.IncompleteReadError) as err:
+                raise EvoquaError("Start/Stop outcome not confirmed; inspect device state. " + str(err)) from err
 
 
 def flow_text(words: list[int], pattern: str | None = None) -> str:

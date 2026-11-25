@@ -1,4 +1,4 @@
-"""Evoqua 700P read-only Home Assistant integration."""
+"""Evoqua 700P Home Assistant integration."""
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 
 from .coordinator import EvoquaCoordinator
 
-PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.NUMBER, Platform.BUTTON]
 type EvoquaConfigEntry = ConfigEntry[EvoquaCoordinator]
 
 

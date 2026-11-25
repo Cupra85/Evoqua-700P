@@ -143,7 +143,9 @@ class Controller:
         return reader, MemoryWriter(self, reader)
 
     def reply(self, raw):
-        transaction, protocol, length, unit, function, address, count = struct.unpack(">HHHBBHH", raw)
+        transaction, protocol, length, unit, function, address, count = struct.unpack(">HHHBBHH", raw[:12])
+        if function in (6, 16):
+            return self.write_reply(raw)
         if protocol != 0 or length != 6 or function != 3:
             raise AssertionError("The client must only send correctly framed FC03 requests")
         self.requests.append((function, address, count, unit))
@@ -152,6 +154,8 @@ class Controller:
         if self.mode == "disconnect":
             return None
         words = [self.registers.get(self.base + address + i, 0) for i in range(count)]
+        if address in getattr(self, "unsupported", set()):
+            return struct.pack(">HHHB", transaction, 0, 3, unit) + b"\x83\x02"
         pdu = bytes([3, count * 2]) + struct.pack(f">{count}H", *words)
         if self.mode == "exception":
             pdu = b"\x83\x02"
@@ -169,13 +173,41 @@ class Controller:
         )
         return header + pdu
 
+    def write_reply(self, raw):
+        transaction, protocol, length, unit, function = struct.unpack(">HHHBB", raw[:8])
+        address, count = struct.unpack(">HH", raw[8:12])
+        assert protocol == 0 and length == len(raw) - 6
+        self.requests.append((function, address, count, unit))
+        if function == 16:
+            assert count == 2 and raw[12] == 4 and len(raw) == 17
+            words = struct.unpack(">HH", raw[13:])
+        else:
+            assert len(raw) == 12
+            words = [count]
+        if self.mode == "write_exception":
+            pdu = bytes([function | 0x80, 3])
+        else:
+            if self.mode != "readback_mismatch":
+                for i, word in enumerate(words):
+                    self.registers[self.base + address + i] = word
+            if self.mode == "write_disconnect":
+                return None  # Device applied command; acknowledgement lost.
+            if self.mode == "write_timeout":
+                return b""
+            pdu = raw[7:12]
+            if self.mode == "write_bad_echo":
+                pdu = pdu[:-1] + bytes([pdu[-1] ^ 1])
+        return struct.pack(">HHHB", transaction, 0, len(pdu) + 1, unit) + pdu
+
     async def handle(self, reader, writer):
         task = asyncio.current_task()
         self.tasks.add(task)
         self.connections += 1
         try:
             while True:
-                raw = await reader.readexactly(12)
+                header = await reader.readexactly(7)
+                length = struct.unpack(">H", header[4:6])[0]
+                raw = header + await reader.readexactly(length - 1)
                 response = self.reply(raw)
                 if self.mode == "timeout":
                     await reader.read()
@@ -356,7 +388,7 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
 
 
 class FlowProfileTests(unittest.IsolatedAsyncioTestCase):
-    """Fixtures transcribed from the deployed Node-RED read sequencers."""
+    """Fixtures independently transcribed from the manual v2 register table."""
 
     if MEMORY:
         loop_factory = MemoryOnlyEventLoop
@@ -373,15 +405,17 @@ class FlowProfileTests(unittest.IsolatedAsyncioTestCase):
         self.text(10, "V:2.06", 10)
         self.text(15, "25.11.2026", 10)
         self.text(20, "08:51", 6)
-        self.basic_addresses = [100, 115, 130, 175, 111, 126, 113, 128]
-        self.parameter_addresses = [
-            999, 1001, 1003, 1005, 1007, 1009,
-            1049, 1051, 1053, 1055, 1057, 1059,
-            1061, 1063, 1065, 1067, 1069, 1071,
-            1073, 1075, 1077, 1079, 1081, 1083, 1109, 1111, 1113,
-        ]
+        self.basic_addresses = [99, 114, 129, 174, 110, 125, 112, 127]
+        self.parameter_addresses = [*range(999, 1023, 2), *range(1049, 1115, 2)]
+        for base, unit in [(99,"mg/l"),(114,"pH"),(129,"mV"),(144,"mg/l"),
+                           (159,"mS/cm"),(174,"°C"),(204,"%"),(219,"%")]:
+            self.number(base, 1.25, "CDAB")
+            self.text(base+2, unit, 10)
+            self.number(base+7, 0, "CDAB")
+            self.number(base+9, 100, "CDAB")
+        self.number(189, 12.5, "CDAB")
         for address, value in zip(self.basic_addresses, [0.65, 7.2, 740, 26.5, 0.9, 7.8, 25, 30]):
-            self.number(address, value, "ABCD")
+            self.number(address, value, "CDAB")
         for address in self.parameter_addresses:
             self.number(address, 1.25, "CDAB")
         for address, value in {299: 5, 300: 12, 301: 0x81, 302: 9, 303: 0x8022,
@@ -389,7 +423,7 @@ class FlowProfileTests(unittest.IsolatedAsyncioTestCase):
             self.controller.registers[400001 + address] = value
 
     def text(self, address, value, size):
-        raw = value.encode("ascii").ljust(size, b"\x00")[:size]
+        raw = value.encode("cp437").ljust(size, b"\x00")[:size]
         raw = b"".join(raw[i:i+2][::-1] for i in range(0, len(raw), 2))
         for i, word in enumerate(struct.unpack(f">{size // 2}H", raw)):
             self.controller.registers[400001 + address + i] = word
@@ -408,12 +442,13 @@ class FlowProfileTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_exact_flow_wire_addresses_and_no_writes(self):
         result = await self.snapshot()
-        self.assertEqual(len(result.measurements), 35)
+        self.assertEqual(len(result.measurements), 80)
         self.assertEqual(self.controller.requests, [
-            (3, 0, 15, 1),
-            *[(3, address, 2, 1) for address in self.basic_addresses + self.parameter_addresses],
-            (3, 299, 2, 1), (3, 300, 2, 1), (3, 301, 1, 1), (3, 302, 1, 1),
-            (3, 303, 2, 1), (3, 307, 2, 1), (3, 15, 5, 1), (3, 20, 3, 1),
+            (3, 0, 15, 1), (3, 15, 5, 1), (3, 20, 3, 1),
+            *[(3, address, 15, 1) for address in [99, 114, 129, 144, 159]],
+            (3, 174, 11, 1), (3, 204, 11, 1), (3, 219, 11, 1), (3, 189, 2, 1),
+            *[(3, address, 2, 1) for address in self.parameter_addresses],
+            (3, 299, 18, 1), (3, 1999, 1, 1),
         ])
 
     async def test_mixed_float_orders_and_fixed_units(self):
@@ -477,7 +512,7 @@ class FlowProfileTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_nan_parameter_is_unavailable_and_zero_preserved(self):
         self.number(999, math.nan, "CDAB")
-        self.number(113, 0, "ABCD")
+        self.number(112, 0, "CDAB")
         result = await self.snapshot()
         self.assertIsNone(result.measurements["chlorine_setpoint"].value)
         self.assertEqual(result.measurements["chlorine_dosing"].value, 0)
@@ -494,6 +529,142 @@ class FlowProfileTests(unittest.IsolatedAsyncioTestCase):
             await self.snapshot()
         self.controller.mode = None
         self.assertEqual((await self.snapshot()).system_name, "Pool")
+
+
+
+class WriteTests(unittest.IsolatedAsyncioTestCase):
+    if MEMORY:
+        loop_factory = MemoryOnlyEventLoop
+    text = FlowProfileTests.text
+    number = FlowProfileTests.number
+    snapshot = FlowProfileTests.snapshot
+    asyncTearDown = FlowProfileTests.asyncTearDown
+    """Use the same fragmented TCP simulator for reads and physical write frames."""
+
+    async def asyncSetUp(self):
+        await FlowProfileTests.asyncSetUp(self)
+        for base, count in [(1049, 6), (1061, 6), (1073, 6), (1085, 6), (1097, 6), (1109, 3)]:
+            for offset in range(count):
+                self.number(base + offset * 2, [0, 100, 1.25][offset % 3], "CDAB")
+
+    def writes(self):
+        return [request for request in self.controller.requests if request[0] != 3]
+
+    async def test_all_45_documented_float_writes(self):
+        expected_addresses = {*range(999, 1023, 2), *range(1049, 1115, 2)}
+        self.assertEqual({point.address for point in api.WRITE_POINTS.values()}, expected_addresses)
+        for key, point in api.WRITE_POINTS.items():
+            value = 0.5 if point.kind.startswith("hyst") else 2
+            self.client._last_write = -math.inf
+            self.assertTrue(await self.client.async_write_number(key, value), key)
+            actual = [self.controller.registers[400001 + point.address + i] for i in range(2)]
+            self.assertEqual(actual, [0, 0x3F00 if value == 0.5 else 0x4000], key)
+        self.assertEqual(len(self.writes()), 45)
+        self.assertTrue(all(request[0] == 16 and request[2:] == (2, 1) for request in self.writes()))
+
+    async def test_unchanged_float_is_not_written(self):
+        self.assertFalse(await self.client.async_write_number("chlorine_setpoint", 1.25))
+        self.assertEqual(self.writes(), [])
+
+    async def test_read_only_unknown_and_invalid_values_never_write(self):
+        for key, value in [("chlorine", 2), ("relay1", 1), ("raw_400001", 1),
+                           ("chlorine_setpoint", math.nan), ("ph_xp", math.inf),
+                           ("ph_tn", True), ("ph_tn", "2")]:
+            with self.subTest(key=key, value=value), self.assertRaises(api.EvoquaError):
+                await self.client.async_write_number(key, value)
+        self.assertEqual(self.controller.connections, 0)
+
+    async def test_fresh_ranges_and_paired_limits_are_enforced(self):
+        for key, value in [("chlorine_setpoint", -1), ("ph_xp", 1001), ("ph_tn", 101),
+                           ("chlorine_min1", 101), ("chlorine_max1", -1),
+                           ("temperature_hyst1", 0), ("temperature_hyst1", 101)]:
+            with self.subTest(key=key), self.assertRaises(api.EvoquaError):
+                await self.client.async_write_number(key, value)
+        # Simulate a limit changed locally since the previous HA poll.
+        self.number(1051, 0.25, "CDAB")
+        with self.assertRaises(api.EvoquaError):
+            await self.client.async_write_number("chlorine_min1", 0.5)
+        self.assertEqual(self.writes(), [])
+
+    async def test_missing_range_blocks_write(self):
+        self.number(106, math.nan, "CDAB")
+        with self.assertRaises(api.EvoquaError):
+            await self.client.async_write_number("chlorine_setpoint", 2)
+        self.assertEqual(self.writes(), [])
+
+    async def test_no_automatic_retry_on_uncertain_write(self):
+        for mode in ("write_disconnect", "write_timeout", "write_bad_echo", "readback_mismatch", "write_exception"):
+            with self.subTest(mode=mode):
+                self.number(999, 1.25, "CDAB")
+                self.client._last_write = -math.inf
+                self.controller.requests.clear()
+                self.controller.mode = mode
+                with self.assertRaises(api.EvoquaError):
+                    await self.client.async_write_number("chlorine_setpoint", 2)
+                self.assertEqual(len(self.writes()), 1)
+                self.controller.mode = None
+                # A later poll is read-only, even after an acknowledgement was lost.
+                await self.snapshot()
+                self.assertEqual(len(self.writes()), 1)
+
+    async def test_rate_limit_and_connection_cleanup(self):
+        await self.client.async_write_number("chlorine_setpoint", 2)
+        with self.assertRaises(api.EvoquaError):
+            await self.client.async_write_number("ph_setpoint", 3)
+        self.assertEqual(len(self.writes()), 1)
+        await asyncio.sleep(0.01)
+        self.assertEqual(self.controller.closed, 2)
+
+    async def test_zero_tn_is_a_valid_value(self):
+        self.assertTrue(await self.client.async_write_number("ph_tn", 0))
+        self.assertEqual(self.controller.registers[401010], 0)
+        self.assertEqual(self.controller.registers[401011], 0)
+
+    async def test_shock_start_stop_exact_fc06_preserves_other_bits(self):
+        self.controller.registers[402000] = 0x0041
+        await self.client.async_shock_toggle()
+        self.assertEqual(self.writes(), [(6, 1999, 0x0241, 1)])
+        self.assertEqual(self.controller.registers[402000], 0x0241)
+        self.assertEqual(self.controller.requests[-1], (3, 303, 1, 1))
+
+    async def test_pending_shock_command_not_repeated(self):
+        self.controller.registers[402000] = 0x0200
+        with self.assertRaises(api.EvoquaError):
+            await self.client.async_shock_toggle()
+        self.assertEqual(self.writes(), [])
+
+    async def test_shock_lost_ack_is_not_retried(self):
+        self.controller.mode = "write_disconnect"
+        with self.assertRaises(api.EvoquaError):
+            await self.client.async_shock_toggle()
+        self.assertEqual(len(self.writes()), 1)
+
+    async def test_writes_require_valid_identity(self):
+        self.text(10, "invalid", 10)
+        with self.assertRaises(api.InvalidDevice):
+            await self.client.async_write_number("chlorine_setpoint", 2)
+        self.assertEqual(self.writes(), [])
+
+    async def test_optional_register_failure_does_not_hide_core_values(self):
+        self.controller.unsupported = {144, 1011, 1999}
+        result = await self.snapshot()
+        self.assertIsNone(result.measurements["total_chlorine"].value)
+        self.assertIsNone(result.measurements["total_chlorine_setpoint"].value)
+        self.assertIsNone(result.values["function_word"])
+        self.assertAlmostEqual(result.measurements["ph"].value, 7.2, places=5)
+
+    async def test_additional_modes_errors_alarms_and_dynamic_units(self):
+        self.controller.registers[400300] = 0xF0
+        self.controller.registers[400305] = 2
+        self.controller.registers[400310] = 0x8000
+        self.controller.registers[400311] = 0x8000
+        self.text(161, "mS/cm", 10)
+        result = await self.snapshot()
+        self.assertEqual(result.values["ph_operating_mode"], "Automatik")
+        self.assertEqual(result.values["ph_error_code"], 0x80008000)
+        self.assertTrue(result.binaries["ph_problem"])
+        self.assertEqual(result.measurements["conductivity_setpoint"].unit, "mS/cm")
+        self.assertTrue(all(result.binaries[f"alarm{i}"] for i in range(5, 9)))
 
 
 if __name__ == "__main__":

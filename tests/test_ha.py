@@ -8,15 +8,15 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.evoqua_700p.const import DOMAIN
 from custom_components.evoqua_700p.evoqua import (
-    FLOW_BINARIES, FLOW_POINTS, FLOW_TEXTS, EvoquaError, Measurement, Snapshot,
+    FLOW_BINARIES, FLOW_POINTS, FLOW_TEXTS, WRITE_POINTS, EvoquaError, Measurement, Snapshot,
 )
 
 
 def snapshot():
     return Snapshot(
         "Pool", "V:2.06",
-        {key: Measurement(1.25, point.unit) for key, point in FLOW_POINTS.items()},
-        values={key: (0 if key == "chlorine_error_code" else "Test") for key in FLOW_TEXTS},
+        {key: Measurement(0 if key.endswith(("_range_min", "_min1", "_min2")) else 100 if key.endswith(("_range_max", "_max1", "_max2")) else 1.25, point.unit) for key, point in FLOW_POINTS.items()},
+        values={key: (0 if key.endswith("_code") or key.endswith("_word") else "Test") for key in FLOW_TEXTS},
         binaries={key: False for key in FLOW_BINARIES},
     )
 
@@ -64,17 +64,17 @@ async def test_duplicate_ip_is_rejected(hass):
 
 
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
-async def test_all_read_only_entities_load_and_unload(hass):
+async def test_all_read_entities_and_write_controls_load_and_unload(hass):
     entry = MockConfigEntry(domain=DOMAIN, title="Evoqua 700P – Pool", version=2, data={"host": "192.0.2.10"})
     entry.add_to_hass(hass)
     with patch("custom_components.evoqua_700p.evoqua.EvoquaClient.async_snapshot", return_value=snapshot()):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
         states = hass.states.async_all()
-        assert len(states) == len(FLOW_POINTS) + len(FLOW_TEXTS) + len(FLOW_BINARIES)
-        assert {state.domain for state in states} == {"sensor", "binary_sensor"}
+        assert len(states) == len(FLOW_POINTS) + len(FLOW_TEXTS) + len(FLOW_BINARIES) + len(WRITE_POINTS) + 1
+        assert {state.domain for state in states} == {"sensor", "binary_sensor", "number", "button"}
         assert any(state.state == "1.25" for state in states)
-        assert all(state.state not in ("unavailable", "unknown") for state in states)
+        assert all(state.state not in ("unavailable", "unknown") for state in states if state.domain != "button")
         assert await hass.config_entries.async_unload(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -109,4 +109,45 @@ async def test_reconfigure_only_changes_ip(hass):
         assert result["reason"] == "reconfigure_successful"
         assert dict(entry.data) == {"host": "192.0.2.11"}
         await hass.async_block_till_done()
+        assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_number_and_button_services_call_explicit_commands(hass):
+    from homeassistant.helpers import entity_registry as er
+    entry = MockConfigEntry(domain=DOMAIN, version=2, data={"host": "192.0.2.10"})
+    entry.add_to_hass(hass)
+    with patch("custom_components.evoqua_700p.evoqua.EvoquaClient.async_snapshot", return_value=snapshot()), \
+         patch("custom_components.evoqua_700p.evoqua.EvoquaClient.async_write_number", return_value=True) as write, \
+         patch("custom_components.evoqua_700p.evoqua.EvoquaClient.async_shock_toggle") as shock:
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        write.assert_not_awaited()
+        shock.assert_not_awaited()
+        registry = er.async_get(hass)
+        number = registry.async_get_entity_id("number", DOMAIN, entry.entry_id + "_chlorine_setpoint_control")
+        button = registry.async_get_entity_id("button", DOMAIN, entry.entry_id + "_shock_start_stop")
+        await hass.services.async_call("number", "set_value", {"entity_id": number, "value": 2}, blocking=True)
+        write.assert_awaited_once_with("chlorine_setpoint", 2)
+        # Mock device retained 1.25: there is no optimistic state update.
+        assert hass.states.get(number).state == "1.25"
+        await hass.services.async_call("button", "press", {"entity_id": button}, blocking=True)
+        shock.assert_awaited_once_with()
+        assert await hass.config_entries.async_unload(entry.entry_id)
+
+
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
+async def test_write_error_propagates_without_retry(hass):
+    from homeassistant.helpers import entity_registry as er
+    from homeassistant.exceptions import HomeAssistantError
+    entry = MockConfigEntry(domain=DOMAIN, version=2, data={"host": "192.0.2.10"})
+    entry.add_to_hass(hass)
+    with patch("custom_components.evoqua_700p.evoqua.EvoquaClient.async_snapshot", return_value=snapshot()), \
+         patch("custom_components.evoqua_700p.evoqua.EvoquaClient.async_write_number", side_effect=EvoquaError("uncertain")) as write:
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        number = er.async_get(hass).async_get_entity_id("number", DOMAIN, entry.entry_id + "_chlorine_setpoint_control")
+        with pytest.raises(HomeAssistantError):
+            await hass.services.async_call("number", "set_value", {"entity_id": number, "value": 2}, blocking=True)
+        write.assert_awaited_once()
         assert await hass.config_entries.async_unload(entry.entry_id)

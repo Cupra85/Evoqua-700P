@@ -5,6 +5,7 @@ import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DEFAULTS, DOMAIN
@@ -35,3 +36,18 @@ class EvoquaCoordinator(DataUpdateCoordinator[Snapshot]):
             )
         except EvoquaError as err:
             raise UpdateFailed(str(err)) from err
+
+    async def _async_command(self, command, *args):
+        try:
+            await command(*args)
+        except EvoquaError as err:
+            # A failed acknowledgement must never cause an automatic retry.
+            await self.async_request_refresh()
+            raise HomeAssistantError(str(err)) from err
+        await self.async_request_refresh()
+
+    async def async_write_number(self, key, value):
+        await self._async_command(self.client.async_write_number, key, value)
+
+    async def async_shock_toggle(self):
+        await self._async_command(self.client.async_shock_toggle)

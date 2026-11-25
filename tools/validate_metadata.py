@@ -18,6 +18,8 @@ for path in [component / "strings.json", *sorted((component / "translations").gl
     api = load_client()
     assert set(api.FLOW_POINTS) | set(api.FLOW_TEXTS) == set(data["entity"]["sensor"]), path
     assert set(api.FLOW_BINARIES) == set(data["entity"]["binary_sensor"]), path
+    assert set(api.WRITE_POINTS) == set(data["entity"]["number"]), path
+    assert set(data["entity"]["button"]) == {"shock_start_stop"}, path
     assert "cannot_connect" in data["config"]["error"], path
     assert "reconfigure" in data["config"]["step"], path
     for step in ("user", "reconfigure"):

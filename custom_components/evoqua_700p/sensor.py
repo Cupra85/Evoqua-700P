@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import EvoquaConfigEntry
 from .entity import EvoquaEntity
-from .evoqua import FLOW_POINTS, FLOW_TEXTS
+from .evoqua import FLOW_POINTS, FLOW_TEXTS, RAW_STATUS
 
 PARALLEL_UPDATES = 0
 
@@ -22,7 +22,7 @@ async def async_setup_entry(
 
 
 class EvoquaMeasurement(EvoquaEntity, SensorEntity):
-    """A read-only FLOAT with the address and unit from the Node-RED flow."""
+    """A FLOAT read using the documented address and device-provided unit."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
 
@@ -67,16 +67,18 @@ class EvoquaValue(EvoquaEntity, SensorEntity):
     def __init__(self, coordinator, key: str) -> None:
         super().__init__(coordinator, key)
         self.key = key
-        if key in ("system_name", "software_version", "chlorine_error_code"):
+        if key in ("system_name", "software_version", "function_word") or key.endswith(("_unit", "_error_code", "_mode_code")) or key in RAW_STATUS:
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
-        if key == "chlorine_error_code":
+        if key.endswith(("_error_code", "_mode_code", "_unit")) or key in RAW_STATUS or key == "function_word":
             self._attr_entity_registry_enabled_default = False
 
     @property
     def native_value(self) -> str | int | None:
-        return self.coordinator.data.values.get(self.key) or (
-            0 if self.key == "chlorine_error_code" else None
-        )
+        return self.coordinator.data.values.get(self.key)
+
+    @property
+    def available(self):
+        return super().available and self.native_value is not None
 
     @property
     def extra_state_attributes(self) -> dict:

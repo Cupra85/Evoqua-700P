@@ -32,26 +32,107 @@
       "chlorine": {
         "name": "Chlorine"
       },
-      "ph": {
-        "name": "pH"
+      "chlorine_range_min": {
+        "name": "Chlorine measuring range start"
       },
-      "orp": {
-        "name": "ORP"
-      },
-      "temperature": {
-        "name": "Temperature"
+      "chlorine_range_max": {
+        "name": "Chlorine measuring range end"
       },
       "chlorine_current_setpoint": {
         "name": "Chlorine current setpoint"
       },
-      "ph_current_setpoint": {
-        "name": "pH current setpoint"
-      },
       "chlorine_dosing": {
         "name": "Chlorine dosing output"
       },
+      "ph": {
+        "name": "pH"
+      },
+      "ph_range_min": {
+        "name": "pH measuring range start"
+      },
+      "ph_range_max": {
+        "name": "pH measuring range end"
+      },
+      "ph_current_setpoint": {
+        "name": "pH current setpoint"
+      },
       "ph_dosing": {
         "name": "pH dosing output"
+      },
+      "orp": {
+        "name": "ORP"
+      },
+      "orp_range_min": {
+        "name": "ORP measuring range start"
+      },
+      "orp_range_max": {
+        "name": "ORP measuring range end"
+      },
+      "orp_current_setpoint": {
+        "name": "ORP current setpoint"
+      },
+      "orp_dosing": {
+        "name": "ORP dosing output"
+      },
+      "total_chlorine": {
+        "name": "Total chlorine"
+      },
+      "total_chlorine_range_min": {
+        "name": "Total chlorine measuring range start"
+      },
+      "total_chlorine_range_max": {
+        "name": "Total chlorine measuring range end"
+      },
+      "total_chlorine_current_setpoint": {
+        "name": "Total chlorine current setpoint"
+      },
+      "total_chlorine_dosing": {
+        "name": "Total chlorine dosing output"
+      },
+      "conductivity": {
+        "name": "Conductivity"
+      },
+      "conductivity_range_min": {
+        "name": "Conductivity measuring range start"
+      },
+      "conductivity_range_max": {
+        "name": "Conductivity measuring range end"
+      },
+      "conductivity_current_setpoint": {
+        "name": "Conductivity current setpoint"
+      },
+      "conductivity_dosing": {
+        "name": "Conductivity dosing output"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "temperature_range_min": {
+        "name": "Temperature measuring range start"
+      },
+      "temperature_range_max": {
+        "name": "Temperature measuring range end"
+      },
+      "circulation": {
+        "name": "Circulation"
+      },
+      "circulation_range_min": {
+        "name": "Circulation measuring range start"
+      },
+      "circulation_range_max": {
+        "name": "Circulation measuring range end"
+      },
+      "analog_input_2": {
+        "name": "Analog input 2"
+      },
+      "analog_input_2_range_min": {
+        "name": "Analog input 2 measuring range start"
+      },
+      "analog_input_2_range_max": {
+        "name": "Analog input 2 measuring range end"
+      },
+      "flocculation_dosing": {
+        "name": "Flocculation dosing output"
       },
       "chlorine_setpoint": {
         "name": "Chlorine setpoint (W)"
@@ -70,6 +151,24 @@
       },
       "ph_tn": {
         "name": "pH integral time (Tn)"
+      },
+      "total_chlorine_setpoint": {
+        "name": "Total chlorine setpoint (W)"
+      },
+      "total_chlorine_xp": {
+        "name": "Total chlorine proportional band (Xp)"
+      },
+      "total_chlorine_tn": {
+        "name": "Total chlorine integral time (Tn)"
+      },
+      "conductivity_setpoint": {
+        "name": "Conductivity setpoint (W)"
+      },
+      "conductivity_xp": {
+        "name": "Conductivity proportional band (Xp)"
+      },
+      "conductivity_tn": {
+        "name": "Conductivity integral time (Tn)"
       },
       "chlorine_min1": {
         "name": "Chlorine minimum 1"
@@ -125,6 +224,42 @@
       "orp_hyst2": {
         "name": "ORP hysteresis 2"
       },
+      "total_chlorine_min1": {
+        "name": "Total chlorine minimum 1"
+      },
+      "total_chlorine_max1": {
+        "name": "Total chlorine maximum 1"
+      },
+      "total_chlorine_hyst1": {
+        "name": "Total chlorine hysteresis 1"
+      },
+      "total_chlorine_min2": {
+        "name": "Total chlorine minimum 2"
+      },
+      "total_chlorine_max2": {
+        "name": "Total chlorine maximum 2"
+      },
+      "total_chlorine_hyst2": {
+        "name": "Total chlorine hysteresis 2"
+      },
+      "conductivity_min1": {
+        "name": "Conductivity minimum 1"
+      },
+      "conductivity_max1": {
+        "name": "Conductivity maximum 1"
+      },
+      "conductivity_hyst1": {
+        "name": "Conductivity hysteresis 1"
+      },
+      "conductivity_min2": {
+        "name": "Conductivity minimum 2"
+      },
+      "conductivity_max2": {
+        "name": "Conductivity maximum 2"
+      },
+      "conductivity_hyst2": {
+        "name": "Conductivity hysteresis 2"
+      },
       "temperature_min1": {
         "name": "Temperature minimum 1"
       },
@@ -147,13 +282,97 @@
         "name": "Device time"
       },
       "operating_mode": {
-        "name": "Operating mode"
+        "name": "Chlorine operating mode"
+      },
+      "ph_operating_mode": {
+        "name": "pH operating mode"
+      },
+      "total_chlorine_operating_mode": {
+        "name": "Total chlorine operating mode"
+      },
+      "conductivity_operating_mode": {
+        "name": "Conductivity operating mode"
       },
       "error_text": {
-        "name": "Faults"
+        "name": "Chlorine faults"
+      },
+      "ph_error_text": {
+        "name": "pH faults"
+      },
+      "orp_error_text": {
+        "name": "ORP faults"
+      },
+      "total_chlorine_error_text": {
+        "name": "Total chlorine faults"
+      },
+      "conductivity_error_text": {
+        "name": "Conductivity faults"
       },
       "chlorine_error_code": {
-        "name": "Fault code"
+        "name": "Chlorine fault code"
+      },
+      "ph_error_code": {
+        "name": "pH fault code"
+      },
+      "orp_error_code": {
+        "name": "ORP fault code"
+      },
+      "total_chlorine_error_code": {
+        "name": "Total chlorine fault code"
+      },
+      "conductivity_error_code": {
+        "name": "Conductivity fault code"
+      },
+      "chlorine_unit": {
+        "name": "Chlorine unit"
+      },
+      "ph_unit": {
+        "name": "pH unit"
+      },
+      "orp_unit": {
+        "name": "ORP unit"
+      },
+      "total_chlorine_unit": {
+        "name": "Total chlorine unit"
+      },
+      "conductivity_unit": {
+        "name": "Conductivity unit"
+      },
+      "temperature_unit": {
+        "name": "Temperature unit"
+      },
+      "circulation_unit": {
+        "name": "Circulation unit"
+      },
+      "analog_input_2_unit": {
+        "name": "Analog input 2 unit"
+      },
+      "alarm_word": {
+        "name": "Alarm word"
+      },
+      "input_word": {
+        "name": "Input word"
+      },
+      "relay_word": {
+        "name": "Relay word"
+      },
+      "aux_relay_word": {
+        "name": "Aux relay word"
+      },
+      "chlorine_mode_code": {
+        "name": "Chlorine mode code"
+      },
+      "ph_mode_code": {
+        "name": "pH mode code"
+      },
+      "total_chlorine_mode_code": {
+        "name": "Total chlorine mode code"
+      },
+      "conductivity_mode_code": {
+        "name": "Conductivity mode code"
+      },
+      "function_word": {
+        "name": "Function word"
       }
     },
     "binary_sensor": {
@@ -177,6 +396,18 @@
       },
       "alarm4": {
         "name": "Alarm 4"
+      },
+      "alarm5": {
+        "name": "Alarm 5"
+      },
+      "alarm6": {
+        "name": "Alarm 6"
+      },
+      "alarm7": {
+        "name": "Alarm 7"
+      },
+      "alarm8": {
+        "name": "Alarm 8"
       },
       "relay1": {
         "name": "Relay K1"
@@ -224,7 +455,161 @@
         "name": "Shock chlorination"
       },
       "chlorine_problem": {
-        "name": "Fault"
+        "name": "Chlorine fault"
+      },
+      "ph_problem": {
+        "name": "pH fault"
+      },
+      "orp_problem": {
+        "name": "ORP fault"
+      },
+      "total_chlorine_problem": {
+        "name": "Total chlorine fault"
+      },
+      "conductivity_problem": {
+        "name": "Conductivity fault"
+      }
+    },
+    "number": {
+      "chlorine_setpoint": {
+        "name": "Chlorine setpoint (W)"
+      },
+      "chlorine_xp": {
+        "name": "Chlorine proportional band (Xp)"
+      },
+      "chlorine_tn": {
+        "name": "Chlorine integral time (Tn)"
+      },
+      "ph_setpoint": {
+        "name": "pH setpoint (W)"
+      },
+      "ph_xp": {
+        "name": "pH proportional band (Xp)"
+      },
+      "ph_tn": {
+        "name": "pH integral time (Tn)"
+      },
+      "total_chlorine_setpoint": {
+        "name": "Total chlorine setpoint (W)"
+      },
+      "total_chlorine_xp": {
+        "name": "Total chlorine proportional band (Xp)"
+      },
+      "total_chlorine_tn": {
+        "name": "Total chlorine integral time (Tn)"
+      },
+      "conductivity_setpoint": {
+        "name": "Conductivity setpoint (W)"
+      },
+      "conductivity_xp": {
+        "name": "Conductivity proportional band (Xp)"
+      },
+      "conductivity_tn": {
+        "name": "Conductivity integral time (Tn)"
+      },
+      "chlorine_min1": {
+        "name": "Chlorine minimum 1"
+      },
+      "chlorine_max1": {
+        "name": "Chlorine maximum 1"
+      },
+      "chlorine_hyst1": {
+        "name": "Chlorine hysteresis 1"
+      },
+      "chlorine_min2": {
+        "name": "Chlorine minimum 2"
+      },
+      "chlorine_max2": {
+        "name": "Chlorine maximum 2"
+      },
+      "chlorine_hyst2": {
+        "name": "Chlorine hysteresis 2"
+      },
+      "ph_min1": {
+        "name": "pH minimum 1"
+      },
+      "ph_max1": {
+        "name": "pH maximum 1"
+      },
+      "ph_hyst1": {
+        "name": "pH hysteresis 1"
+      },
+      "ph_min2": {
+        "name": "pH minimum 2"
+      },
+      "ph_max2": {
+        "name": "pH maximum 2"
+      },
+      "ph_hyst2": {
+        "name": "pH hysteresis 2"
+      },
+      "orp_min1": {
+        "name": "ORP minimum 1"
+      },
+      "orp_max1": {
+        "name": "ORP maximum 1"
+      },
+      "orp_hyst1": {
+        "name": "ORP hysteresis 1"
+      },
+      "orp_min2": {
+        "name": "ORP minimum 2"
+      },
+      "orp_max2": {
+        "name": "ORP maximum 2"
+      },
+      "orp_hyst2": {
+        "name": "ORP hysteresis 2"
+      },
+      "total_chlorine_min1": {
+        "name": "Total chlorine minimum 1"
+      },
+      "total_chlorine_max1": {
+        "name": "Total chlorine maximum 1"
+      },
+      "total_chlorine_hyst1": {
+        "name": "Total chlorine hysteresis 1"
+      },
+      "total_chlorine_min2": {
+        "name": "Total chlorine minimum 2"
+      },
+      "total_chlorine_max2": {
+        "name": "Total chlorine maximum 2"
+      },
+      "total_chlorine_hyst2": {
+        "name": "Total chlorine hysteresis 2"
+      },
+      "conductivity_min1": {
+        "name": "Conductivity minimum 1"
+      },
+      "conductivity_max1": {
+        "name": "Conductivity maximum 1"
+      },
+      "conductivity_hyst1": {
+        "name": "Conductivity hysteresis 1"
+      },
+      "conductivity_min2": {
+        "name": "Conductivity minimum 2"
+      },
+      "conductivity_max2": {
+        "name": "Conductivity maximum 2"
+      },
+      "conductivity_hyst2": {
+        "name": "Conductivity hysteresis 2"
+      },
+      "temperature_min1": {
+        "name": "Temperature minimum 1"
+      },
+      "temperature_max1": {
+        "name": "Temperature maximum 1"
+      },
+      "temperature_hyst1": {
+        "name": "Temperature hysteresis 1"
+      }
+    },
+    "button": {
+      "shock_start_stop": {
+        "name": "Shock chlorination Start/Stop"
       }
     }
   }
