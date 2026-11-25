@@ -4,7 +4,8 @@ Lokale, ausschließlich lesende Custom Integration für die Evoqua / Wallace & T
 **DEPOLOX Pool E 700 P**. Einrichtung über die Home-Assistant-Oberfläche mit
 IP-Adresse, Modbus-TCP-Port und Auswahl der vorhandenen Messkanäle.
 
-**Stand 0.1.2:** Protokolltests mit simulierten Modbus-Datenströmen.
+**Stand 0.1.2:** 17 Protokolltests gegen einen simulierten Modbus-TCP-Server
+auf GitHub unter Python 3.13 und 3.14 erfolgreich.
 Die Integration wurde noch nicht an einer echten 700 P und noch nicht in einem
 laufenden Home Assistant geprüft. Vor produktiver Nutzung die Werte mit der
 Geräteanzeige vergleichen. Dieses Paket ist kein offizielles Evoqua-Produkt.

@@ -10,16 +10,17 @@
 - Python-Syntax aller Integrations-, Werkzeug- und Testdateien.
 - JSON-Syntax, Manifest-Felder und Übersetzungsabdeckung (Deutsch/Englisch).
 - Versionskennung V2.06 und V:2.06 wird akzeptiert und unverändert weitergegeben.
+- GitHub Actions: beide Jobs unter Python 3.13 und 3.14 erfolgreich; vollständige
+  TCP-Tests, Syntaxprüfung und Metadatenprüfung bestanden.
+  [Testlauf auf GitHub](https://github.com/Cupra85/Evoqua-700P/actions/runs/45671851737).
 
-Ausgeführt mit `EVOQUA_TEST_TRANSPORT=memory`. Dabei werden die TCP-Streams
-simuliert; es findet keine Netzwerkverbindung statt. Das Produktionsmodul wird
-unverändert importiert, ausschließlich `asyncio.open_connection` wird im Test ersetzt.
+Die lokalen Tests wurden mit `EVOQUA_TEST_TRANSPORT=memory` ausgeführt. Dabei
+werden die TCP-Streams simuliert; ausschließlich `asyncio.open_connection` wird
+im Test ersetzt. Auf GitHub wurden dieselben Tests anschließend ohne diesen
+Ersatz mit echten TCP-Verbindungen zum lokalen Simulator ausgeführt.
 
 ## Noch offen
 
-- Echte TCP-Verbindungen: Die Ausführungsumgebung ließ keine Netzwerkzugriffe zu.
-  Der beigefügte GitHub-Workflow führt dieselben Tests regulär mit TCP-Sockets aus.
-  Dieser Workflow wurde noch nicht auf GitHub gestartet.
 - Home-Assistant-Laufzeit und HACS: Zusatzpakete konnten wegen fehlender
   Namensauflösung zu PyPI nicht installiert werden. Es liegt kein ausgeführter
   Home-Assistant-Kompatibilitätstest vor.
