@@ -1,1 +1,12 @@
-
+{
+  "domain": "evoqua_700p",
+  "name": "Evoqua 700P",
+  "version": "0.1.2",
+  "config_flow": true,
+  "documentation": "https://github.com/Cupra85/Evoqua-700P",
+  "issue_tracker": "https://github.com/Cupra85/Evoqua-700P/issues",
+  "iot_class": "local_polling",
+  "integration_type": "device",
+  "requirements": [],
+  "codeowners": ["@Cupra85"]
+}
