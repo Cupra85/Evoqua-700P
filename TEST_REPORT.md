@@ -19,9 +19,13 @@ werden die TCP-Streams simuliert; ausschließlich `asyncio.open_connection` wird
 im Test ersetzt. Auf GitHub wurden dieselben Tests anschließend ohne diesen
 Ersatz mit echten TCP-Verbindungen zum lokalen Simulator ausgeführt.
 
+- Offizielle statische Prüfungen mit HACS und Home Assistant hassfest bestanden:
+  [Validierung](https://github.com/Cupra85/Evoqua-700P/actions/runs/45675118243).
+  Diese Prüfungen ersetzen keinen Laufzeit- oder Hardwaretest.
+
 ## Noch offen
 
-- Home-Assistant-Laufzeit und HACS: Zusatzpakete konnten wegen fehlender
+- Home-Assistant-Laufzeit: Zusatzpakete konnten wegen fehlender
   Namensauflösung zu PyPI nicht installiert werden. Es liegt kein ausgeführter
   Home-Assistant-Kompatibilitätstest vor.
 - Hardware: Firmware V2.06 laut Nutzer. Die IP-Adresse ist absichtlich universell

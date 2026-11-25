@@ -6,8 +6,10 @@ Lokale, ausschließlich lesende Custom Integration für die Evoqua / Wallace & T
 **DEPOLOX Pool E 700 P**. Einrichtung über die Home-Assistant-Oberfläche mit
 IP-Adresse, Modbus-TCP-Port und Auswahl der vorhandenen Messkanäle.
 
-**Stand 0.1.2:** 17 Protokolltests gegen einen simulierten Modbus-TCP-Server
+**Stand 0.1.3:** 17 Protokolltests gegen einen simulierten Modbus-TCP-Server
 auf GitHub unter Python 3.13 und 3.14 erfolgreich.
+Die offiziellen Prüfungen mit HACS und Home Assistant hassfest sind bestanden:
+[Validierung](https://github.com/Cupra85/Evoqua-700P/actions/runs/45675118243).
 Die Integration wurde noch nicht an einer echten 700 P und noch nicht in einem
 laufenden Home Assistant geprüft. Vor produktiver Nutzung die Werte mit der
 Geräteanzeige vergleichen. Dieses Paket ist kein offizielles Evoqua-Produkt.
@@ -50,8 +52,13 @@ Für die Installation über HACS unter **Benutzerdefinierte Repositories** die U
 `https://github.com/Cupra85/Evoqua-700P` und die Kategorie **Integration** eintragen.
 Anschließend **Evoqua 700P** herunterladen, Home Assistant neu starten und die
 Integration wie oben beschrieben hinzufügen. `hacs.json` und die passende
-Verzeichnisstruktur liegen bei. Eine HACS-Validierung ist noch nicht erfolgt.
+Verzeichnisstruktur liegen bei. Die HACS-Validierung ist bestanden.
 Manuelle Installation funktioniert unabhängig von HACS.
+
+Die Aufnahme in den öffentlichen Marketplace-Katalog wird separat beantragt.
+Bis zur Freigabe durch das HACS-Team ist das Repository über den obigen Weg
+installierbar. Für das mitgelieferte Integrationssymbol wird Home Assistant
+2026.3 oder neuer benötigt.
 
 ## Einstellungen
 
