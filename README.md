@@ -2,10 +2,9 @@
 
 ![Evoqua](custom_components/evoqua_700p/brand/icon.png)
 
-Lokale, ausschließlich lesende Integration für Evoqua / Wallace & Tiernan
-DEPOLOX Pool E 700 P. **Bei der Einrichtung wird nur die IP-Adresse eingegeben.**
-Port, Unit-ID, Registerzuordnung und Byte-Reihenfolgen sind automatisch gesetzt.
-Kein MQTT-Broker und kein Node-RED sind für diese Integration erforderlich.
+Lokale Modbus-TCP-Integration für Evoqua / Wallace & Tiernan DEPOLOX Pool E 700 P.
+**Bei der Einrichtung nur die IP-Adresse eingeben.** Port 502, Unit-ID 1,
+Register und Datenformate werden automatisch gesetzt. Kein MQTT oder Node-RED nötig.
 
 ## Installation
 
@@ -13,108 +12,126 @@ Kein MQTT-Broker und kein Node-RED sind für diese Integration erforderlich.
    `https://github.com/Cupra85/Evoqua-700P` als **Integration** hinzufügen.
 2. **Evoqua 700P** herunterladen und Home Assistant neu starten.
 3. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Evoqua 700P**.
-4. **IP-Adresse eingeben und absenden.** Es gibt keine weiteren Eingabefelder.
+4. **IP-Adresse eingeben und absenden.** Keine weiteren Eingabefelder.
 
-Am Gerät muss Modbus TCP auf Port **502** aktiviert sein. Home Assistant muss
-die Anlage im lokalen Netz erreichen. Die IP-Adresse wird ausschließlich in der
-jeweiligen Home-Assistant-Installation gespeichert; im Repository ist keine
-Geräteadresse hinterlegt. Mehrere Anlagen können mit unterschiedlichen IPs
-eingerichtet werden. Die Verbindung und das gesamte Leseprofil werden vor dem
-Speichern geprüft. Die IP kann später über **Neu konfigurieren** geändert werden.
+Am Gerät muss Modbus TCP auf Port 502 aktiviert sein. Home Assistant muss die
+Anlage im lokalen Netz erreichen. Mehrere Anlagen lassen sich mit verschiedenen
+IPs einrichten. Die Adresse wird nur lokal in Home Assistant gespeichert und
+kann über **Neu konfigurieren** geändert werden.
 
 Alternativ das Release-ZIP entpacken und `custom_components/evoqua_700p` nach
-`/config/custom_components/evoqua_700p` kopieren. Danach Home Assistant neu starten.
-Home Assistant ab 2025.12; für das mitgelieferte Logo ab 2026.3.
+`/config/custom_components/evoqua_700p` kopieren. Home Assistant neu starten.
+Home Assistant ab 2025.12; eingebautes Logo ab 2026.3. Zielanlage: Firmware V2.06.
 
-## Leseprofil ab Version 0.1.4
+## Lesen und Schreiben ab 0.1.5
 
-Das Profil wurde aus einem bestehenden Node-RED-Flow **„700P Lesen“** einer Anlage
-mit **V:2.06** übernommen. Der Systemname ist frei einstellbar (beispielsweise
-„Pool“) und muss deshalb keine Modellnummer enthalten. Systemname, lesbare
-Firmware ab 1.31 und gültige Antworten auf die Profilabfragen sind erforderlich.
-Die Firmwarekennung allein beweist nicht das Gerätemodell.
+Die Integration deckt alle funktional bezeichneten R- und RW-Datenpunkte der
+Evoqua-Anleitung ab Version 2.00, Ausgabe 11-0620, Abschnitt 4.6 ab.
+Mit `--` markierte/reservierte Bereiche haben keine eigene Funktion.
+Die vollständige Zuordnung steht in [REGISTERS.md](REGISTERS.md).
 
-- Chlor, pH, Redox und Temperatur.
-- Aktuelle Chlor-/pH-Sollwerte sowie Dosierleistungen.
-- Chlor-/pH-Reglerparameter W, Xp und Tn.
-- Chlor-, pH-, Redox- und Temperaturgrenzwerte einschließlich Hysteresen.
-- DI1–DI3, Messwasser, Messwasser-Stopp und Alarm 1–4.
-- Zustände der Relais K1–K8 und K21–K24.
-- Betriebsart, Stoßchlorungsstatus, Fehlertext und vollständige Fehlerbits.
-- Systemname, Softwareversion, Gerätedatum und Gerätezeit.
+| Bereich | Unterstützung |
+|---|---|
+| Chlor, pH, Redox, Gesamtchlor, Leitfähigkeit, Temperatur | Messwert, Geräteeinheit, Messbereich |
+| Umwälzung / Analogeingang 2 | Messwert, frei konfigurierte Geräteeinheit und Messbereich |
+| Flockung | Aktuelle Dosierleistung |
+| Chemische Kanäle | Aktueller Sollwert und Dosierleistung, soweit dokumentiert |
+| Chlor / pH / Gesamtchlor / Leitfähigkeit | W, Xp, Tn lesen und schreiben: 12 Zahlenfelder |
+| Chlor / pH / Redox / Gesamtchlor / Leitfähigkeit | Min1, Max1, Hyst1, Min2, Max2, Hyst2 lesen und schreiben |
+| Temperatur | Min1, Max1, Hysterese lesen und schreiben; insgesamt 33 Grenzwertfelder |
+| Stoßchlorung | Start/Stopp-Button (402000 Bit 9), separater Iststatus (400304 Bit 15) |
+| Eingänge / Alarme / Relais | DI1–3, Messwasser-Stopp, Alarm 1–8, K1–K8 und K21–K24 |
+| Betriebsart | Alle vier Regler, vollständige 16-Bit-Auswertung in Attributen |
+| Fehler | Alle fünf chemischen Kanäle, vollständige UINT32-Codes und Meldungen |
+| Information | Systemname, Softwareversion, Datum, Gerätezeit, rohe Statuswörter |
 
-Alle Entitäten sind Sensoren oder Binärsensoren. Auch Sollwerte, Reglerparameter
-und Relais werden **nur gelesen**. Die Integration implementiert ausschließlich
-Modbus **FC03** und keine Steuerung von Dosierung, Sollwerten oder Relais.
+Es gibt 80 numerische Lesesensoren, zusätzliche Text-/Diagnosesensoren und
+Binärsensoren sowie **45 Numbers und einen Button**. Bestehende Lesesensoren für
+RW-Parameter bleiben erhalten. Die Bedienelemente befinden sich beim HA-Gerät
+unter **Konfiguration**. Zusätzliche Einheiten und rohe Codes sind standardmäßig
+deaktivierte Diagnosesensoren und können bei Bedarf aktiviert werden.
 
-## Register und Datenformate
+Relais, Betriebsart und Dosierleistung sind in der Modbus-Tabelle ausschließlich
+lesbar. Dafür werden keine Schreibbefehle erfunden. Geräteinterne Einstellungen
+wie Kalibrierung, Stoßchlorungsdauer und Stoßchlorungssollwert sind in dieser
+Modbus-Tabelle nicht schreibbar und werden weiterhin am Gerät eingestellt.
 
-Die folgenden Adressen sind **direkte, nullbasierte Adressen im Modbus-Telegramm**.
-Sie sind keine 4xxxxx-Handbuchnummern. Das Profil übernimmt die Adressierung der
-Sequencer unverändert; die beiden FLOAT-Gruppen haben unterschiedliche Reihenfolgen.
+## Verhalten beim Schreiben
 
-| Inhalt | Wire-Adresse | Format |
-|---|---:|---|
-| Systemname / Softwareversion | 0 / 10 | Text, Bytes je Register vertauscht |
-| Gerätedatum / Gerätezeit | 15 / 20 | Text, Bytes je Register vertauscht |
-| Chlor / pH / Redox / Temperatur | 100 / 115 / 130 / 175 | FLOAT ABCD |
-| Aktuelle Sollwerte Chlor / pH | 111 / 126 | FLOAT ABCD |
-| Dosierleistung Chlor / pH | 113 / 128 | FLOAT ABCD |
-| Alarm / Digitaleingänge | 299 / 300 | Bits des ersten UINT16 |
-| Relais K1–K8 / K21–K24 | 301 / 302 | UINT16, Bits 0–7 / 0–3 |
-| Betriebsart / Stoßchlorung | 303 | UINT16, Stoßchlorung Bit 15 |
-| Fehler | 307 | UINT32, Low-Word zuerst (CDAB) |
-| Chlor W / Xp / Tn | 999 / 1001 / 1003 | FLOAT CDAB |
-| pH W / Xp / Tn | 1005 / 1007 / 1009 | FLOAT CDAB |
-| Chlor Min1/Max1/Hyst1/Min2/Max2/Hyst2 | 1049–1059, Schritt 2 | FLOAT CDAB |
-| pH Min1/Max1/Hyst1/Min2/Max2/Hyst2 | 1061–1071, Schritt 2 | FLOAT CDAB |
-| Redox Min1/Max1/Hyst1/Min2/Max2/Hyst2 | 1073–1083, Schritt 2 | FLOAT CDAB |
-| Temperatur Min1/Max1/Hyst1 | 1109 / 1111 / 1113 | FLOAT CDAB |
+Schreiben erfolgt nur durch eine ausdrückliche Bedienung oder eine vom Benutzer
+angelegte HA-Automation. Einrichten, Starten und Abfragen senden ausschließlich
+FC03. Zahlen werden atomar mit FC16 über beide FLOAT-Register geschrieben;
+der Start/Stopp-Befehl verwendet FC06. Keine zusätzliche Einrichtung erforderlich.
 
-ABCD entspricht Big Endian über beide Register; CDAB vertauscht die beiden
-16-Bit-Wörter. Die Einheiten sind wie im Flow fest zugeordnet: mg/L, mV, °C, % und
-min. pH ist dimensionslos. DI-Bit 3 bedeutet Messwasser-Stopp; „Messwasser“ zeigt
-entsprechend die umgekehrte Polarität. Fehlercodes werden ohne Vorzeichen gelesen.
-Lange Fehlerlisten stehen vollständig im Attribut `active_flags`.
+Vor Zahlenänderungen liest die Integration Identität, aktuellen Wert und die
+benötigten Messbereichs-/Grenzwertdaten frisch. Xp: 0–1000 %, Tn: 0–100 min
+(0 deaktiviert Tn). Sollwerte und Grenzwerte müssen im Gerätemessbereich liegen,
+Min/Max zusätzlich innerhalb ihres Grenzwertpaars. Zahlen werden erst nach
+exaktem Rücklesen als bestätigt behandelt; keine optimistische Zustandsänderung.
 
-Abfrageintervall: **10 Sekunden** für alle Werte, Port **502**, Unit-ID **1**,
-Zeitlimit **1 Sekunde pro Anfrage**. Anders als im Ausgangsflow werden Relais
-ebenfalls alle 10 Sekunden abgefragt. Eine Verbindung pro Zyklus, Anfragen
-nacheinander. Nach einem Fehler werden die Entitäten nicht verfügbar; die nächste
-erfolgreiche Abfrage stellt sie wieder her. NaN und Infinity werden nicht publiziert.
+**Hysteresen:** Eingabe in der Einheit des Geräts, beispielsweise mg/L oder mV.
+Die Anleitung nennt 1–25 Anzeigedigits, deren variable Schrittweite jedoch nicht
+über Modbus. Es erfolgt deshalb keine angenommene Digit-Umrechnung. Die Software
+prüft auf positive Werte bis zur Messbereichsspanne; die konkrete zulässige
+Digitspanne muss mit der Geräteanzeige abgeglichen werden. Abweichende
+Rücklesewerte führen zu einem Fehler. Details und Grenzen in [REGISTERS.md](REGISTERS.md).
 
-Die Gerätezeit wird ohne künstlichen Stundenaufschlag angezeigt. Der Ausgangsflow
-enthielt einen festen +10-Stunden-Aufschlag; dieser anlagenspezifische Workaround
-wurde nicht in eine universelle Integration übernommen. Unverwendete Sequenzen
-ohne zugehörige Auswertung (329 und 1999) werden nicht zusätzlich abgefragt.
+**Stoßchlorung Start/Stopp:** Der Button sendet den dokumentierten 0x0200-Befehl
+und bewahrt die übrigen Bits des frisch gelesenen Funktionsworts. Er besitzt
+keinen angenommenen Ein-/Aus-Zustand. Dafür den separaten Sensor **Stoßchlorung**
+und die Geräteanzeige verwenden. Ein noch gesetztes Befehlsbit verhindert eine
+erneute Sendung. Kein automatisches Rücksetzen des Bits.
+Eine Stoßchlorung darf gemäß Anleitung nur außerhalb des Badebetriebs erfolgen.
 
-## Aktualisierung von 0.1.3
+Die Anleitung warnt vor Speicherschäden durch zyklisches bzw. wiederholtes
+Schreiben gleicher Werte. Identische kodierte Zahlen werden übersprungen;
+höchstens ein Schreibversuch pro Sekunde. Nach Timeout oder verlorener
+Bestätigung erfolgt **kein automatischer Schreibwiederholversuch**. Ein Befehl
+kann dann bereits ausgeführt worden sein: erst den tatsächlichen Zustand prüfen.
+Nach einem Befehl oder Fehler wird ausschließlich lesend aktualisiert.
 
-Die gespeicherte IP und die eindeutigen Kennungen bestehender Messwert-Entitäten
-bleiben erhalten. Bisherige erweiterte Einstellungen werden durch das oben
-beschriebene feste Profil ersetzt. Zusätzliche Entitäten werden automatisch
-angelegt. Alte Entitäten für nicht im Profil enthaltene Kanäle können als nicht
-verfügbar bestehen bleiben; sie werden nicht automatisch gelöscht.
+## Registerformate und Aktualisierung
 
-## Prüfstand
+Handbuchregister sind einbasiert: `Wire-Adresse = Register − 400001`.
+FLOAT und UINT32: **CDAB**, Low-Word zuerst. ASCII: CP437, Bytes innerhalb eines
+16-Bit-Worts vertauscht. Geräteeinheiten werden ausgelesen, auch °F und mS/cm.
+Keine fest angenommene Temperatureinheit und kein künstlicher Zeitaufschlag.
+Der frei vergebene Systemname darf beispielsweise „Pool“ lauten.
 
-27 Protokolltests prüfen Telegramme, exakte Profiladressen, gemischte Byte-
-Reihenfolgen, Text, Eingänge, Relais, Meldungen, Nichtverfügbarkeit und Erholung.
-Ein zusätzlicher Home-Assistant-Testlauf prüft das IP-Formular, Plattformen und
-Migration mit simulierten Gerätedaten. Ergebnisse stehen unter
-[GitHub Actions](https://github.com/Cupra85/Evoqua-700P/actions) und in
+Alle Werte werden alle **10 Sekunden** abgefragt. Pro Zyklus eine Verbindung,
+Anfragen seriell; Zeitlimit 1 Sekunde pro Anfrage. Abfragen und Schreibaktionen
+teilen eine Sperre. Nach Kommunikationsfehlern erfolgt Erholung beim nächsten
+erfolgreichen Poll. Nicht endliche Werte werden nicht veröffentlicht. Modbus-
+Ausnahmen 2/3 einzelner optionaler Messkanäle/Parameter machen nur diese Werte
+nicht verfügbar; Transport- oder Protokollfehler betreffen den ganzen Zyklus.
+
+**Upgrade von 0.1.4:** Die acht aus dem Node-RED-Flow übernommenen Messwertabfragen
+wurden anhand der Anleitung auf die dokumentierten einbasierten Register und
+CDAB berichtigt. Beispielsweise Chlor: Wire 99/CDAB statt 100/ABCD. Zahlen können
+dadurch anders ausfallen. Vor Verwendung mit der Geräteanzeige vergleichen.
+Gespeicherte IP und bestehende eindeutige Entitätskennungen bleiben erhalten.
+Die neuen Werte und Bedienelemente werden automatisch ergänzt.
+
+## Prüfungen und praktische Grenzen
+
+41 Protokolltests prüfen Adressen, Dekodierung, alle 45 FLOAT-Schreibregister,
+FC06, Grenzen, doppelte Werte, Rücklesefehler, verlorene Bestätigungen und
+Wiederverbindung. Zusätzliche Tests mit echtem Home Assistant prüfen Formular,
+Plattformen, Migration und die Bedienung der Numbers und des Buttons.
+Ergebnisse: [GitHub Actions](https://github.com/Cupra85/Evoqua-700P/actions),
 [TEST_REPORT.md](TEST_REPORT.md).
 
-Die Zuordnung ist aus dem bereitgestellten Flow abgeleitet. Ein Ende-zu-Ende-Test
-dieser Version an einer echten 700P steht noch aus. Auch endliche FLOAT-Werte
-können bei einer falschen Zuordnung falsch sein: Messwerte beim ersten Test mit
-der Geräteanzeige vergleichen. Das Paket ist kein offizielles Evoqua-Produkt.
+Diese Version ist softwareseitig mit simulierten Registern geprüft. Ein
+Ende-zu-Ende-Test an der echten 700P steht aus. Es wurden keine Dosier- oder
+Regelparameter an einer echten Anlage geändert. Die Integration ersetzt weder
+die Geräteschutzfunktionen noch die Prüfung der Messwerte und Einstellungen.
+Kein offizielles Evoqua-Produkt.
 
-Die [Aufnahme in den Marketplace-Katalog](https://github.com/hacs/default/pull/14943)
-ist beantragt und wartet auf die Freigabe des HACS-Teams. Bis dahin ist die
-Installation über das benutzerdefinierte Repository möglich.
+Die [Aufnahme in den HACS-Katalog](https://github.com/hacs/default/pull/14943)
+ist beantragt; die Freigabe durch das HACS-Team steht aus. Bis dahin über das
+benutzerdefinierte Repository installieren.
 
-## Diagnose und Entwicklung
+## Entwicklung
 
 ```sh
 python tools/probe.py 192.0.2.10
@@ -122,12 +139,11 @@ python -m unittest discover -s tests -p test_protocol.py -v
 python tools/validate_metadata.py
 ```
 
-`192.0.2.10` ist eine Beispieladresse. Das Diagnoseprogramm verwendet standardmäßig
-dasselbe feste Profil wie Home Assistant. `--profile manual` aktiviert ausschließlich
-für Entwickler das frühere Handbuchprofil mit wählbarer Registerbasis/Byte-Reihenfolge.
-Für socketfreie Testumgebungen ist `EVOQUA_TEST_TRANSPORT=memory` verfügbar.
+`192.0.2.10` ist eine Beispieladresse. Das Diagnoseprogramm liest ausschließlich.
+Der interne Profilname `node_red_206` bleibt aus Kompatibilitätsgründen erhalten;
+ab 0.1.5 entspricht er der vollständigen v2-Handbuchtabelle. `--profile manual`
+ist das ältere, nur lesende Entwicklerprofil mit wählbaren Formaten.
+Socketfreie Tests: `EVOQUA_TEST_TRANSPORT=memory`.
+HA-Tests: `pip install pytest-homeassistant`, dann `python -m pytest tests/test_ha.py -v`.
 
-Home-Assistant-Tests: `pip install pytest-homeassistant`, danach
-`python -m pytest tests/test_ha.py -v` (passende Python-/Home-Assistant-Version).
-
-Fehlerberichte: [Issues](https://github.com/Cupra85/Evoqua-700P/issues). Lizenz: MIT.
+[Fehler melden](https://github.com/Cupra85/Evoqua-700P/issues). Lizenz: MIT.
