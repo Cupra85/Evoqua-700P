@@ -16,12 +16,14 @@
 
 ## GitHub-Prüfungen
 
-Die Workflows prüfen TCP unter Python 3.13/3.14 sowie die Integration mit echtem
-Home Assistant und simulierten Gerätedaten. HA-Tests prüfen die vier Plattformen,
+Bestanden: 41 TCP-Protokolltests jeweils unter Python 3.13/3.14 sowie 12 Tests
+mit Home Assistant 2026.11.3, Python 3.14.10 und simulierten Gerätedaten.
+Die HA-Tests prüfen die vier Plattformen,
 IP-only-Formulare, Migration, explizite Number-/Button-Bedienung und Fehlerweitergabe.
 HACS und hassfest prüfen Paket und Metadaten ohne ausgeschaltete Prüfungen.
-Der zugehörige Lauf wird vor Veröffentlichung geprüft:
-[GitHub Actions](https://github.com/Cupra85/Evoqua-700P/actions).
+[Erfolgreicher Testlauf](https://github.com/Cupra85/Evoqua-700P/actions/runs/45688159362).
+[HA-Testprotokoll](https://github.com/Cupra85/Evoqua-700P/actions/runs/45688159362/job/139466178189).
+[Erfolgreiche HACS-/hassfest-Prüfung](https://github.com/Cupra85/Evoqua-700P/actions/runs/45688159331).
 
 ## Herkunft und Grenzen
 
