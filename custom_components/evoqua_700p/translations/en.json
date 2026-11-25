@@ -1,0 +1,121 @@
+{
+  "title": "Evoqua 700P",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Evoqua 700P",
+        "description": "Connect your pool controller. Enable Modbus TCP port 502 on the device and select installed channels. Start with the default advanced settings.",
+        "data": {
+          "host": "IP address or hostname",
+          "port": "Modbus TCP port",
+          "unit_id": "Modbus unit ID",
+          "timeout": "Timeout per request (seconds)",
+          "register_base": "Register base (default: 400001)",
+          "byte_order": "32-bit byte order (default: ABCD)",
+          "channels": "Installed measurement channels",
+          "scan_interval": "Polling interval (seconds)",
+          "include_status": "Also read status and error registers"
+        }
+      },
+      "reconfigure": {
+        "title": "Change connection",
+        "data": {
+          "host": "IP address or hostname",
+          "port": "Modbus TCP port",
+          "unit_id": "Modbus unit ID",
+          "timeout": "Timeout per request (seconds)",
+          "register_base": "Register base (default: 400001)",
+          "byte_order": "32-bit byte order (default: ABCD)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No valid Modbus response. Check the IP address, enabled port 502, unit ID and register base.",
+      "invalid_device": "The system name does not identify a 700 P or the firmware is older than 1.31. Check the model and register base.",
+      "invalid_host": "Enter an IP address or hostname without http:// or a path."
+    },
+    "abort": {
+      "already_configured": "This connection is already configured.",
+      "reconfigure_successful": "Connection updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Channels and polling",
+        "data": {
+          "channels": "Installed measurement channels",
+          "scan_interval": "Polling interval (seconds)",
+          "include_status": "Also read status and error registers"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No valid Modbus response. Check the IP address, enabled port 502, unit ID and register base.",
+      "invalid_device": "The system name does not identify a 700 P or the firmware is older than 1.31. Check the model and register base."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "chlorine": {
+        "name": "Chlorine"
+      },
+      "ph": {
+        "name": "pH"
+      },
+      "orp": {
+        "name": "ORP"
+      },
+      "total_chlorine": {
+        "name": "Total chlorine"
+      },
+      "conductivity": {
+        "name": "Conductivity"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "circulation": {
+        "name": "Circulation"
+      },
+      "analog_input_2": {
+        "name": "Analog input 2"
+      },
+      "chlorine_error_code": {
+        "name": "Chlorine error code"
+      },
+      "ph_error_code": {
+        "name": "pH error code"
+      },
+      "orp_error_code": {
+        "name": "ORP error code"
+      },
+      "total_chlorine_error_code": {
+        "name": "Total chlorine error code"
+      },
+      "conductivity_error_code": {
+        "name": "Conductivity error code"
+      }
+    },
+    "binary_sensor": {
+      "sample_water_stop": {
+        "name": "Sample water stop"
+      },
+      "chlorine_problem": {
+        "name": "Chlorine fault"
+      },
+      "ph_problem": {
+        "name": "pH fault"
+      },
+      "orp_problem": {
+        "name": "ORP fault"
+      },
+      "total_chlorine_problem": {
+        "name": "Total chlorine fault"
+      },
+      "conductivity_problem": {
+        "name": "Conductivity fault"
+      }
+    }
+  }
+}

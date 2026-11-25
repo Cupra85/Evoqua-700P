@@ -1,0 +1,121 @@
+{
+  "title": "Evoqua 700P",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Evoqua 700P",
+        "description": "Verbindung zur Pool-Messanlage einrichten. Am Gerät muss Modbus TCP auf Port 502 aktiviert sein. Nur vorhandene Kanäle auswählen. Erweiterte Werte zunächst unverändert lassen.",
+        "data": {
+          "host": "IP-Adresse oder Hostname",
+          "port": "Modbus-TCP-Port",
+          "unit_id": "Modbus Unit-ID",
+          "timeout": "Zeitlimit je Anfrage (Sekunden)",
+          "register_base": "Registerbasis (Standard: 400001)",
+          "byte_order": "Byte-Reihenfolge für 32-Bit-Werte (Standard: ABCD)",
+          "channels": "Vorhandene Messkanäle",
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "include_status": "Status- und Fehlerregister zusätzlich auslesen"
+        }
+      },
+      "reconfigure": {
+        "title": "Verbindung ändern",
+        "data": {
+          "host": "IP-Adresse oder Hostname",
+          "port": "Modbus-TCP-Port",
+          "unit_id": "Modbus Unit-ID",
+          "timeout": "Zeitlimit je Anfrage (Sekunden)",
+          "register_base": "Registerbasis (Standard: 400001)",
+          "byte_order": "Byte-Reihenfolge für 32-Bit-Werte (Standard: ABCD)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Keine gültige Modbus-Antwort. IP, Port 502, Unit-ID und aktivierten Modbus-Port am Gerät prüfen. Bei Registerfehlern die Registerbasis prüfen.",
+      "invalid_device": "Die Gerätekennung entspricht keiner 700 P oder die Firmware ist älter als 1.31. Modell und Registerbasis prüfen.",
+      "invalid_host": "Nur eine IP-Adresse oder einen Hostnamen eingeben, ohne http:// oder Pfad."
+    },
+    "abort": {
+      "already_configured": "Diese Verbindung ist bereits eingerichtet.",
+      "reconfigure_successful": "Die Verbindung wurde aktualisiert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Messkanäle und Abfrage",
+        "data": {
+          "channels": "Vorhandene Messkanäle",
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "include_status": "Status- und Fehlerregister zusätzlich auslesen"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Keine gültige Modbus-Antwort. IP, Port 502, Unit-ID und aktivierten Modbus-Port am Gerät prüfen. Bei Registerfehlern die Registerbasis prüfen.",
+      "invalid_device": "Die Gerätekennung entspricht keiner 700 P oder die Firmware ist älter als 1.31. Modell und Registerbasis prüfen."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "chlorine": {
+        "name": "Chlor"
+      },
+      "ph": {
+        "name": "pH"
+      },
+      "orp": {
+        "name": "Redox"
+      },
+      "total_chlorine": {
+        "name": "Gesamtchlor"
+      },
+      "conductivity": {
+        "name": "Leitfähigkeit"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "circulation": {
+        "name": "Umwälzung"
+      },
+      "analog_input_2": {
+        "name": "Analogeingang 2"
+      },
+      "chlorine_error_code": {
+        "name": "Chlor Fehlercode"
+      },
+      "ph_error_code": {
+        "name": "pH Fehlercode"
+      },
+      "orp_error_code": {
+        "name": "Redox Fehlercode"
+      },
+      "total_chlorine_error_code": {
+        "name": "Gesamtchlor Fehlercode"
+      },
+      "conductivity_error_code": {
+        "name": "Leitfähigkeit Fehlercode"
+      }
+    },
+    "binary_sensor": {
+      "sample_water_stop": {
+        "name": "Messwasser Stopp"
+      },
+      "chlorine_problem": {
+        "name": "Chlor Störung"
+      },
+      "ph_problem": {
+        "name": "pH Störung"
+      },
+      "orp_problem": {
+        "name": "Redox Störung"
+      },
+      "total_chlorine_problem": {
+        "name": "Gesamtchlor Störung"
+      },
+      "conductivity_problem": {
+        "name": "Leitfähigkeit Störung"
+      }
+    }
+  }
+}
