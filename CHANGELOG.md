@@ -1,5 +1,16 @@
 # Änderungen
 
+## 0.1.5
+
+- Vollständige funktionale R-/RW-Tabelle der v2-Anleitung ergänzt, einschließlich Gesamtchlor, Leitfähigkeit, Flockung, Analogeingängen und Alarm 5–8.
+- 45 Number-Bedienelemente für dokumentierte RW-FLOATs sowie Stoßchlorung Start/Stopp als Button.
+- FC16/FC06 mit Register-Whitelist, frischer Grenzprüfung, Rücklesen, Schreibsperre, Schutz gegen unveränderte Werte und ohne automatische Wiederholung.
+- Hysterese in Geräteeinheiten, ohne angenommene Umrechnung variabler Anzeigedigits; dokumentierte Validierungsgrenze.
+- Messwertadressen und FLOAT-Reihenfolge gegenüber 0.1.4 anhand der Anleitung korrigiert; Einheiten werden vom Gerät gelesen.
+- Alle vier Betriebsarten, fünf Fehlercodes und rohe Statuswörter; optionale Register können separat nicht verfügbar sein.
+- Einrichtung weiterhin nur mit IP-Adresse. 41 Protokolltests und erweiterte HA-Tests.
+- Vollständige Registerübersicht in REGISTERS.md; keine Schreibtests an einer echten Anlage.
+
 ## 0.1.4
 
 - Einrichtung und Neukonfiguration fragen ausschließlich die IP-Adresse ab.
