@@ -1,5 +1,17 @@
 # Änderungen
 
+## 0.1.4
+
+- Einrichtung und Neukonfiguration fragen ausschließlich die IP-Adresse ab.
+- Leseprofil aus dem bestehenden Node-RED-Flow für Firmware V2.06 übernommen.
+- Unterschiedliche Adressierung und Byte-Reihenfolgen je Registergruppe berücksichtigt.
+- Frei einstellbare Systemnamen wie „Pool“ zugelassen.
+- Sollwerte, Dosierleistungen, Reglerparameter, Grenzwerte, Eingänge, Alarme,
+  Relaiszustände, Betriebsart, Fehler und Geräteinformationen als Sensoren ergänzt.
+- Vorhandene Einträge auf das feste Profil migriert; gespeicherte IP bleibt erhalten.
+- 27 Protokolltests und zusätzliche Home-Assistant-Tests für Formular und Plattformen.
+- Gerätezeit ohne anlagenspezifischen +10-Stunden-Aufschlag; Relaisintervall 10 Sekunden.
+
 ## 0.1.3
 
 - Evoqua-Logo für die Anzeige der Integration hinzugefügt.
