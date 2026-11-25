@@ -1,13 +1,17 @@
 {
   "domain": "evoqua_700p",
   "name": "Evoqua 700P",
-  "categories": ["water.pools_spas"],
-  "codeowners": ["@Cupra85"],
+  "categories": [
+    "water.pools_spas"
+  ],
+  "codeowners": [
+    "@Cupra85"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/Cupra85/Evoqua-700P",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Cupra85/Evoqua-700P/issues",
   "requirements": [],
-  "version": "0.1.3"
+  "version": "0.1.4"
 }

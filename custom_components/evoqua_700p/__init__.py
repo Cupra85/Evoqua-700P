@@ -20,3 +20,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: EvoquaConfigEntry) -> bo
 
 async def async_unload_entry(hass: HomeAssistant, entry: EvoquaConfigEntry) -> bool:
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: EvoquaConfigEntry) -> bool:
+    """Keep the saved IP and entity identities when adopting the fixed profile."""
+    if entry.version > 2:
+        return False
+    if entry.version == 1:
+        hass.config_entries.async_update_entry(
+            entry, data={"host": entry.data["host"]}, options={}, version=2,
+        )
+    return True

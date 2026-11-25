@@ -18,10 +18,10 @@ class EvoquaCoordinator(DataUpdateCoordinator[Snapshot]):
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.entry = entry
-        self.settings = {**DEFAULTS, **entry.data, **entry.options}
+        self.settings = {**DEFAULTS, "host": entry.data["host"]}
         self.client = EvoquaClient(**{
             key: self.settings[key]
-            for key in ("host", "port", "unit_id", "timeout", "register_base", "byte_order")
+            for key in ("host", "port", "unit_id", "timeout", "register_base", "byte_order", "profile")
         })
         super().__init__(
             hass, _LOGGER, name=DOMAIN, config_entry=entry,

@@ -29,6 +29,87 @@ CHANNELS = {
 }
 DEFAULT_CHANNELS = ["chlorine", "ph", "orp", "temperature"]
 BYTE_ORDERS = ("ABCD", "CDAB", "BADC", "DCBA")
+FLOW_PROFILE = "node_red_206"
+
+
+@dataclass(frozen=True)
+class ReadPoint:
+    """An absolute wire address, not an inferred manual-register offset."""
+
+    address: int
+    label: str
+    unit: str | None = None
+    order: str = "CDAB"
+    precision: int = 2
+
+
+# The Node-RED sequencers use different addressing and FLOAT orders in these
+# two groups. Do not apply a global offset or byte order to this profile.
+FLOW_POINTS = {
+    "chlorine": ReadPoint(100, "Chlor", "mg/L", "ABCD"),
+    "ph": ReadPoint(115, "pH", None, "ABCD"),
+    "orp": ReadPoint(130, "Redox", "mV", "ABCD", 0),
+    "temperature": ReadPoint(175, "Temperatur", "°C", "ABCD", 1),
+    "chlorine_current_setpoint": ReadPoint(111, "Chlor aktueller Sollwert", "mg/L", "ABCD"),
+    "ph_current_setpoint": ReadPoint(126, "pH aktueller Sollwert", None, "ABCD"),
+    "chlorine_dosing": ReadPoint(113, "Chlor Dosierleistung", "%", "ABCD", 1),
+    "ph_dosing": ReadPoint(128, "pH Dosierleistung", "%", "ABCD", 1),
+    "chlorine_setpoint": ReadPoint(999, "Chlor Sollwert (W)", "mg/L"),
+    "chlorine_xp": ReadPoint(1001, "Chlor P-Anteil (Xp)", "%", precision=1),
+    "chlorine_tn": ReadPoint(1003, "Chlor I-Anteil (Tn)", "min", precision=1),
+    "ph_setpoint": ReadPoint(1005, "pH Sollwert (W)"),
+    "ph_xp": ReadPoint(1007, "pH P-Anteil (Xp)", "%", precision=1),
+    "ph_tn": ReadPoint(1009, "pH I-Anteil (Tn)", "min", precision=1),
+}
+for _key, _label, _address, _unit in (
+    ("chlorine", "Chlor", 1049, "mg/L"),
+    ("ph", "pH", 1061, None),
+    ("orp", "Redox", 1073, "mV"),
+    ("temperature", "Temperatur", 1109, "°C"),
+):
+    for _i, (_suffix, _description) in enumerate((
+        ("min1", "Min1"), ("max1", "Max1"), ("hyst1", "Hysterese1"),
+        ("min2", "Min2"), ("max2", "Max2"), ("hyst2", "Hysterese2"),
+    )):
+        if _key == "temperature" and _i >= 3:
+            break
+        FLOW_POINTS[f"{_key}_{_suffix}"] = ReadPoint(
+            _address + 2 * _i, f"{_label} {_description}", _unit,
+        )
+
+MODE_NAMES = (
+    "Hand", "Automatik", "Regler aus", "Adaption läuft",
+    "Stellmotorkalibrierung läuft", "Regler Stopp (Yout=0%)",
+    "Regler einfrieren", "Regler Yout=100%", "Regler Yout=2xYout",
+    "Stellrad entriegelt", "Stellmotor Poti Fehler", "Eco Mode Umschaltung",
+    "Hochchlorung aktiv", "Regler Standby", "Cedox Regler aktiv", "Stoßchlorung aktiv",
+)
+ERROR_NAMES = {
+    0: "Nullpunkt Kalibrierung", 1: "DPD Kalibrierung", 2: "pH7 Kalibrierung",
+    3: "pHX Kalibrierung", 4: "Kalibrierfehler", 5: "Offset Kalibrierung",
+    7: "Zellenfehler", 8: "Werkskalibrierung Fehler", 9: "Messwert unter Bereich",
+    10: "Messwert über Bereich", 11: "Sollwertfehler", 12: "Grenzwertfehler",
+    13: "HOCL Fehler", 14: "Gesamtchlor Kommunikationsfehler", 15: "Overfeed",
+    16: "Adaption Fehler", 17: "CAN Kommunikation", 18: "Temperatur Fehler",
+    20: "Kein Messwasser", 21: "Stellmotor Fehler", 22: "Stellmotor Kalibrier Fehler",
+    23: "Bürdefehler mA-Ausgang 1", 24: "Bürdefehler mA-Ausgang 2",
+    25: "Bürdefehler mA-Ausgang 3", 26: "Bürdefehler mA-Ausgang 4",
+    27: "Stellglied stetig Fehler", 28: "Flockung Fehler", 29: "Hochchlorung Fehler",
+    30: "Analog Hardware Fehler", 31: "Speicherfehler",
+}
+FLOW_TEXTS = {
+    "system_name": "Systemname", "software_version": "Software-Version",
+    "device_date": "Gerätedatum", "device_time": "Gerätezeit",
+    "operating_mode": "Betriebsart", "error_text": "Fehler",
+    "chlorine_error_code": "Fehlercode",
+}
+FLOW_BINARIES = {
+    **{f"di{i}": f"Digitaleingang {i}" for i in range(1, 4)},
+    **{f"alarm{i}": f"Alarm {i}" for i in range(1, 5)},
+    **{f"relay{k}": f"Relais K{k}" for k in (*range(1, 9), *range(21, 25))},
+    "sample_water": "Messwasser", "sample_water_stop": "Messwasser-Stopp",
+    "shock_chlorination": "Stoßchlorung", "chlorine_problem": "Störung",
+}
 
 
 class EvoquaError(Exception):
@@ -60,6 +141,9 @@ class Snapshot:
     software: str
     measurements: dict[str, Measurement]
     status: dict[int, int] = field(default_factory=dict)
+    values: dict[str, str | int | None] = field(default_factory=dict)
+    binaries: dict[str, bool] = field(default_factory=dict)
+    details: dict[str, list[str]] = field(default_factory=dict)
 
 
 def ordered_bytes(words: list[int], byte_order: str) -> bytes:
@@ -105,6 +189,7 @@ class EvoquaClient:
         timeout: float = 5,
         register_base: int = 400001,
         byte_order: str = "ABCD",
+        profile: str = "manual",
     ) -> None:
         if not host or not 1 <= port <= 65535 or not 0 <= unit_id <= 255:
             raise ValueError("Invalid host, port or unit ID")
@@ -118,6 +203,9 @@ class EvoquaClient:
         self.timeout = timeout
         self.register_base = register_base
         self.byte_order = byte_order
+        if profile not in ("manual", FLOW_PROFILE):
+            raise ValueError("Unknown register profile")
+        self.profile = profile
         self._transaction = 0
         self._lock = asyncio.Lock()
 
@@ -158,6 +246,8 @@ class EvoquaClient:
             try:
                 async with asyncio.timeout(self.timeout):
                     reader, writer = await asyncio.open_connection(self.host, self.port)
+                if self.profile == FLOW_PROFILE:
+                    return await self._read_flow_snapshot(reader, writer)
                 info = await self._read(reader, writer, 400001, 15)
                 name = decode_text(info[:10])
                 software = decode_text(info[10:15])
@@ -194,3 +284,67 @@ class EvoquaClient:
                             await writer.wait_closed()
                     except (OSError, TimeoutError):
                         pass
+
+    async def _read_flow_snapshot(self, reader, writer) -> Snapshot:
+        """Read the Node-RED profile with field-specific wire decoding."""
+        async def read(address, count):
+            return await self._read(reader, writer, address + self.register_base, count)
+
+        # The system name is user-editable: the real installation calls it Pool.
+        identity = await read(0, 15)
+        name = flow_text(identity[:10])
+        software = flow_text(identity[10:15], r"V\s*:?\s*\d+\.\d+")
+        version = re.search(r"(\d+)\.(\d+)", software)
+        if not name or not version or tuple(map(int, version.groups())) < (1, 31):
+            raise InvalidDevice("Missing system name or unsupported firmware identification")
+        measurements = {}
+        for key, point in FLOW_POINTS.items():
+            measurements[key] = Measurement(
+                decode_float(await read(point.address, 2), point.order), point.unit,
+            )
+        alarms = (await read(299, 2))[0]
+        inputs = (await read(300, 2))[0]
+        relay1 = (await read(301, 1))[0]
+        relay2 = (await read(302, 1))[0]
+        mode = (await read(303, 2))[0]
+        error = int.from_bytes(ordered_bytes(await read(307, 2), "CDAB"), "big")
+        modes = [label for bit, label in enumerate(MODE_NAMES) if mode & (1 << bit)]
+        errors = [ERROR_NAMES.get(bit, f"Unbekanntes Bit {bit}") for bit in range(32) if error & (1 << bit)]
+        values = {
+            "system_name": name, "software_version": software,
+            "device_date": flow_text(await read(15, 5), r"\d{2}\.\d{2}\.\d{4}"),
+            "device_time": flow_text(await read(20, 3), r"\d{2}:\d{2}"),
+            "operating_mode": compact_flags(modes, "Keine Aktivität"),
+            "error_text": compact_flags(errors, "Keine Fehler"),
+            "chlorine_error_code": error,
+        }
+        binaries = {
+            **{f"di{i}": bool(inputs & (1 << (i - 1))) for i in range(1, 4)},
+            **{f"alarm{i}": bool(alarms & (1 << (i - 1))) for i in range(1, 5)},
+            **{f"relay{i+1}": bool(relay1 & (1 << i)) for i in range(8)},
+            **{f"relay{i+21}": bool(relay2 & (1 << i)) for i in range(4)},
+            "sample_water": not bool(inputs & 8), "sample_water_stop": bool(inputs & 8),
+            "shock_chlorination": bool(mode & 0x8000), "chlorine_problem": bool(error),
+        }
+        return Snapshot(name, software, measurements, {400308: error, 400301: inputs},
+                        values, binaries, {"operating_mode": modes, "error_text": errors})
+
+
+def flow_text(words: list[int], pattern: str | None = None) -> str:
+    """Node-RED swaps bytes within text registers, not FLOAT words."""
+    raw = struct.pack(f">{len(words)}H", *words)
+    swapped = b"".join(raw[i:i+2][::-1] for i in range(0, len(raw), 2))
+    candidates = [data.decode("cp437").replace("\x00", "").strip() for data in (swapped, raw)]
+    if pattern:
+        for candidate in candidates:
+            match = re.fullmatch(pattern, candidate, re.IGNORECASE)
+            if match:
+                return match.group()
+        return ""
+    return candidates[0] or candidates[1]
+
+
+def compact_flags(flags: list[str], empty: str) -> str:
+    """HA states are limited to 255 characters; keep full flags in attributes."""
+    joined = ", ".join(flags) or empty
+    return joined if len(joined) <= 255 else f"{len(flags)} aktive Meldungen"

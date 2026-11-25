@@ -7,7 +7,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import EvoquaConfigEntry
 from .entity import EvoquaEntity
-from .evoqua import CHANNELS
+from .evoqua import FLOW_POINTS, FLOW_TEXTS
 
 PARALLEL_UPDATES = 0
 
@@ -16,31 +16,26 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: EvoquaConfigEntry, async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator = entry.runtime_data
-    entities = [EvoquaMeasurement(coordinator, key) for key in coordinator.settings["channels"]]
-    if coordinator.settings["include_status"]:
-        entities.extend(
-            EvoquaErrorCode(coordinator, key)
-            for key in coordinator.settings["channels"]
-            if CHANNELS[key].error_register is not None
-        )
+    entities = [EvoquaMeasurement(coordinator, key) for key in FLOW_POINTS]
+    entities.extend(EvoquaValue(coordinator, key) for key in FLOW_TEXTS)
     async_add_entities(entities)
 
 
 class EvoquaMeasurement(EvoquaEntity, SensorEntity):
-    """A value with the unit reported by the device itself."""
+    """A read-only FLOAT with the address and unit from the Node-RED flow."""
 
     _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator, key: str) -> None:
         super().__init__(coordinator, key)
         self.key = key
-        self._attr_suggested_display_precision = CHANNELS[key].precision
+        self._attr_suggested_display_precision = FLOW_POINTS[key].precision
         self._attr_icon = {
             "chlorine": "mdi:water", "ph": "mdi:ph", "orp": "mdi:flash",
             "total_chlorine": "mdi:water", "conductivity": "mdi:current-ac",
             "temperature": "mdi:thermometer", "circulation": "mdi:waves-arrow-right",
             "analog_input_2": "mdi:gauge",
-        }[key]
+        }.get(key, "mdi:gauge")
 
     @property
     def native_value(self) -> float | None:
@@ -52,7 +47,7 @@ class EvoquaMeasurement(EvoquaEntity, SensorEntity):
 
     @property
     def device_class(self) -> SensorDeviceClass | None:
-        if self.key == "temperature" and self.native_unit_of_measurement in ("°C", "°F"):
+        if self.key.startswith("temperature") and self.native_unit_of_measurement in ("°C", "°F"):
             return SensorDeviceClass.TEMPERATURE
         return None
 
@@ -62,19 +57,28 @@ class EvoquaMeasurement(EvoquaEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        return {"modbus_register": CHANNELS[self.key].register}
+        point = FLOW_POINTS[self.key]
+        return {"modbus_wire_address": point.address, "byte_order": point.order}
 
 
-class EvoquaErrorCode(EvoquaEntity, SensorEntity):
-    """Raw channel error bitmask, without firmware-dependent interpretation."""
-
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_entity_registry_enabled_default = False
+class EvoquaValue(EvoquaEntity, SensorEntity):
+    """Identity, device clock, operating flags and diagnostic information."""
 
     def __init__(self, coordinator, key: str) -> None:
-        super().__init__(coordinator, f"{key}_error_code")
-        self.register = CHANNELS[key].error_register
+        super().__init__(coordinator, key)
+        self.key = key
+        if key in ("system_name", "software_version", "chlorine_error_code"):
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        if key == "chlorine_error_code":
+            self._attr_entity_registry_enabled_default = False
 
     @property
-    def native_value(self) -> int | None:
-        return self.coordinator.data.status.get(self.register)
+    def native_value(self) -> str | int | None:
+        return self.coordinator.data.values.get(self.key) or (
+            0 if self.key == "chlorine_error_code" else None
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        flags = self.coordinator.data.details.get(self.key)
+        return {"active_flags": flags} if flags is not None else {}

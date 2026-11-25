@@ -2,169 +2,132 @@
 
 ![Evoqua](custom_components/evoqua_700p/brand/icon.png)
 
-Lokale, ausschließlich lesende Custom Integration für die Evoqua / Wallace & Tiernan
-**DEPOLOX Pool E 700 P**. Einrichtung über die Home-Assistant-Oberfläche mit
-IP-Adresse, Modbus-TCP-Port und Auswahl der vorhandenen Messkanäle.
-
-**Stand 0.1.3:** 17 Protokolltests gegen einen simulierten Modbus-TCP-Server
-auf GitHub unter Python 3.13 und 3.14 erfolgreich.
-Die offiziellen Prüfungen mit HACS und Home Assistant hassfest sind bestanden:
-[Validierung](https://github.com/Cupra85/Evoqua-700P/actions/runs/45675118243).
-Die Integration wurde noch nicht an einer echten 700 P und noch nicht in einem
-laufenden Home Assistant geprüft. Vor produktiver Nutzung die Werte mit der
-Geräteanzeige vergleichen. Dieses Paket ist kein offizielles Evoqua-Produkt.
-
-## Voraussetzungen
-
-- Home Assistant **2025.12 oder neuer**; für diese Versionen entwickelt,
-  ein vollständiger Home-Assistant-Kompatibilitätstest steht noch aus.
-- 700 P mit Firmware **ab 1.31** und aktivierter Modbus-TCP-Schnittstelle.
-- In den Ethernet-Einstellungen des Geräts **Modbus Port = 502** setzen und
-  mit **Übernehmen** speichern. Laut Hersteller ist der Modbus-Port ab Werk aus.
-- Home Assistant kann die IP-Adresse und Port 502 im lokalen Netz erreichen.
+Lokale, ausschließlich lesende Integration für Evoqua / Wallace & Tiernan
+DEPOLOX Pool E 700 P. **Bei der Einrichtung wird nur die IP-Adresse eingegeben.**
+Port, Unit-ID, Registerzuordnung und Byte-Reihenfolgen sind automatisch gesetzt.
+Kein MQTT-Broker und kein Node-RED sind für diese Integration erforderlich.
 
 ## Installation
 
-1. ZIP entpacken.
-2. Den gesamten Ordner `custom_components/evoqua_700p` in das Home-Assistant-
-   Konfigurationsverzeichnis kopieren. Ergebnis:
-   `/config/custom_components/evoqua_700p/manifest.json`.
-   Bei anderen Installationsarten kann das Konfigurationsverzeichnis anders heißen.
-3. Home Assistant neu starten.
-4. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Evoqua 700P**.
-5. IP-Adresse der Pool-Messanlage eingeben und tatsächlich vorhandene Kanäle wählen.
+1. In HACS unter **Benutzerdefinierte Repositories**
+   `https://github.com/Cupra85/Evoqua-700P` als **Integration** hinzufügen.
+2. **Evoqua 700P** herunterladen und Home Assistant neu starten.
+3. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Evoqua 700P**.
+4. **IP-Adresse eingeben und absenden.** Es gibt keine weiteren Eingabefelder.
 
-Die IP-Adresse wird bei jeder neuen Einrichtung abgefragt und nur in der jeweiligen
-Home-Assistant-Installation gespeichert. Es ist keine Geräte-IP im Code hinterlegt;
-auch mehrere Anlagen mit unterschiedlichen IP-Adressen können eingerichtet werden.
+Am Gerät muss Modbus TCP auf Port **502** aktiviert sein. Home Assistant muss
+die Anlage im lokalen Netz erreichen. Die IP-Adresse wird ausschließlich in der
+jeweiligen Home-Assistant-Installation gespeichert; im Repository ist keine
+Geräteadresse hinterlegt. Mehrere Anlagen können mit unterschiedlichen IPs
+eingerichtet werden. Die Verbindung und das gesamte Leseprofil werden vor dem
+Speichern geprüft. Die IP kann später über **Neu konfigurieren** geändert werden.
 
-Als Firmware des Zielgeräts wurde **V2.06** angegeben. Diese Versionskennung wird
-akzeptiert und in den Geräteinformationen angezeigt; ein zusätzlicher Protokolltest
-prüft die Schreibweisen `V2.06` und `V:2.06`. Eine speziell für V2.06 veröffentlichte
-Registerliste wurde nicht gefunden. Die tatsächliche Registerkompatibilität mit
-dieser Firmware muss deshalb noch am Gerät bestätigt werden.
+Alternativ das Release-ZIP entpacken und `custom_components/evoqua_700p` nach
+`/config/custom_components/evoqua_700p` kopieren. Danach Home Assistant neu starten.
+Home Assistant ab 2025.12; für das mitgelieferte Logo ab 2026.3.
 
-Das Formular prüft die Gerätekennung und liest die ausgewählten Kanäle, bevor es
-die Verbindung speichert. Nicht vorhandene Kanäle bitte abwählen; die Integration
-behauptet keine automatische Erkennung der eingebauten Sensoren.
+## Leseprofil ab Version 0.1.4
 
-Für die Installation über HACS unter **Benutzerdefinierte Repositories** die URL
-`https://github.com/Cupra85/Evoqua-700P` und die Kategorie **Integration** eintragen.
-Anschließend **Evoqua 700P** herunterladen, Home Assistant neu starten und die
-Integration wie oben beschrieben hinzufügen. `hacs.json` und die passende
-Verzeichnisstruktur liegen bei. Die HACS-Validierung ist bestanden.
-Manuelle Installation funktioniert unabhängig von HACS.
+Das Profil wurde aus einem bestehenden Node-RED-Flow **„700P Lesen“** einer Anlage
+mit **V:2.06** übernommen. Der Systemname ist frei einstellbar (beispielsweise
+„Pool“) und muss deshalb keine Modellnummer enthalten. Systemname, lesbare
+Firmware ab 1.31 und gültige Antworten auf die Profilabfragen sind erforderlich.
+Die Firmwarekennung allein beweist nicht das Gerätemodell.
 
-Die Aufnahme in den öffentlichen Marketplace-Katalog wird separat beantragt.
-Bis zur Freigabe durch das HACS-Team ist das Repository über den obigen Weg
-installierbar. Für das mitgelieferte Integrationssymbol wird Home Assistant
-2026.3 oder neuer benötigt.
+- Chlor, pH, Redox und Temperatur.
+- Aktuelle Chlor-/pH-Sollwerte sowie Dosierleistungen.
+- Chlor-/pH-Reglerparameter W, Xp und Tn.
+- Chlor-, pH-, Redox- und Temperaturgrenzwerte einschließlich Hysteresen.
+- DI1–DI3, Messwasser, Messwasser-Stopp und Alarm 1–4.
+- Zustände der Relais K1–K8 und K21–K24.
+- Betriebsart, Stoßchlorungsstatus, Fehlertext und vollständige Fehlerbits.
+- Systemname, Softwareversion, Gerätedatum und Gerätezeit.
 
-## Einstellungen
+Alle Entitäten sind Sensoren oder Binärsensoren. Auch Sollwerte, Reglerparameter
+und Relais werden **nur gelesen**. Die Integration implementiert ausschließlich
+Modbus **FC03** und keine Steuerung von Dosierung, Sollwerten oder Relais.
 
-| Einstellung | Standard | Bedeutung |
-| --- | --- | --- |
-| Host | eigene Geräte-IP | IP-Adresse oder DNS-Name, ohne `http://` |
-| Port | 502 | Modbus TCP |
-| Unit-ID | 1 | Im Handbuch nicht eindeutig spezifiziert; falls nötig anpassen |
-| Zeitlimit | 5 Sekunden | Je Verbindungsaufbau bzw. Modbus-Anfrage |
-| Registerbasis | 400001 | Handbuchregister 400100 wird als Adresse 99 übertragen |
-| Byte-Reihenfolge | ABCD | 32-Bit-Werte, z. B. `3F A0 00 00` = 1,25 |
-| Messkanäle | Chlor, pH, Redox, Temperatur | Nur vorhandene Messkanäle auswählen |
-| Abfrageintervall | 30 Sekunden | Änderbar zwischen 5 und 3600 Sekunden |
-| Statusregister | aus | Optional Fehlercodes und Messwasser-Stopp auslesen |
+## Register und Datenformate
 
-Messkanäle und Abfrageintervall lassen sich über **Konfigurieren** ändern.
-Verbindungsdaten über das Menü der Integration → **Neu konfigurieren** ändern.
-Die Entitätskennungen bleiben dabei erhalten. Bei geänderter Kanalauswahl werden
-entfernte Kanäle nicht mehr aktualisiert; alte Einträge können anschließend im
-Entitätsregister gelöscht werden.
+Die folgenden Adressen sind **direkte, nullbasierte Adressen im Modbus-Telegramm**.
+Sie sind keine 4xxxxx-Handbuchnummern. Das Profil übernimmt die Adressierung der
+Sequencer unverändert; die beiden FLOAT-Gruppen haben unterschiedliche Reihenfolgen.
 
-## Messwerte und Register
+| Inhalt | Wire-Adresse | Format |
+|---|---:|---|
+| Systemname / Softwareversion | 0 / 10 | Text, Bytes je Register vertauscht |
+| Gerätedatum / Gerätezeit | 15 / 20 | Text, Bytes je Register vertauscht |
+| Chlor / pH / Redox / Temperatur | 100 / 115 / 130 / 175 | FLOAT ABCD |
+| Aktuelle Sollwerte Chlor / pH | 111 / 126 | FLOAT ABCD |
+| Dosierleistung Chlor / pH | 113 / 128 | FLOAT ABCD |
+| Alarm / Digitaleingänge | 299 / 300 | Bits des ersten UINT16 |
+| Relais K1–K8 / K21–K24 | 301 / 302 | UINT16, Bits 0–7 / 0–3 |
+| Betriebsart / Stoßchlorung | 303 | UINT16, Stoßchlorung Bit 15 |
+| Fehler | 307 | UINT32, Low-Word zuerst (CDAB) |
+| Chlor W / Xp / Tn | 999 / 1001 / 1003 | FLOAT CDAB |
+| pH W / Xp / Tn | 1005 / 1007 / 1009 | FLOAT CDAB |
+| Chlor Min1/Max1/Hyst1/Min2/Max2/Hyst2 | 1049–1059, Schritt 2 | FLOAT CDAB |
+| pH Min1/Max1/Hyst1/Min2/Max2/Hyst2 | 1061–1071, Schritt 2 | FLOAT CDAB |
+| Redox Min1/Max1/Hyst1/Min2/Max2/Hyst2 | 1073–1083, Schritt 2 | FLOAT CDAB |
+| Temperatur Min1/Max1/Hyst1 | 1109 / 1111 / 1113 | FLOAT CDAB |
 
-| Sensor | Handbuchregister | Übertragene Adresse bei Basis 400001 |
-| --- | ---: | ---: |
-| Chlor | 400100 | 99 |
-| pH | 400115 | 114 |
-| Redox | 400130 | 129 |
-| Gesamtchlor | 400145 | 144 |
-| Leitfähigkeit | 400160 | 159 |
-| Temperatur | 400175 | 174 |
-| Umwälzung / mA-Eingang 1 | 400205 | 204 |
-| mA-Eingang 2 | 400220 | 219 |
+ABCD entspricht Big Endian über beide Register; CDAB vertauscht die beiden
+16-Bit-Wörter. Die Einheiten sind wie im Flow fest zugeordnet: mg/L, mV, °C, % und
+min. pH ist dimensionslos. DI-Bit 3 bedeutet Messwasser-Stopp; „Messwasser“ zeigt
+entsprechend die umgekehrte Polarität. Fehlercodes werden ohne Vorzeichen gelesen.
+Lange Fehlerlisten stehen vollständig im Attribut `active_flags`.
 
-Jeder Messwert ist ein IEEE754-FLOAT über zwei Holding-Register; danach folgen
-fünf Register mit der Einheit in CP437. Die Einheit kommt direkt vom Gerät,
-insbesondere °C/°F und µS/cm/mS/cm werden nicht fest angenommen. `mg/l` wird
-als `mg/L` normalisiert. pH erhält keine physikalische Einheit.
+Abfrageintervall: **10 Sekunden** für alle Werte, Port **502**, Unit-ID **1**,
+Zeitlimit **1 Sekunde pro Anfrage**. Anders als im Ausgangsflow werden Relais
+ebenfalls alle 10 Sekunden abgefragt. Eine Verbindung pro Zyklus, Anfragen
+nacheinander. Nach einem Fehler werden die Entitäten nicht verfügbar; die nächste
+erfolgreiche Abfrage stellt sie wieder her. NaN und Infinity werden nicht publiziert.
 
-Optional werden die Register 400300–400317 abgefragt: Messwasser-Stopp
-(400301, Bit 3), ein Störungssensor je ausgewähltem chemischen Kanal und dessen
-roher UINT32-Fehlercode. Die Fehlercode-Sensoren sind zunächst deaktiviert und
-können im Entitätsregister eingeschaltet werden. Einzelne Fehlerbits unterscheiden
-sich zwischen Handbuchständen und werden deshalb nicht als Klartext interpretiert.
+Die Gerätezeit wird ohne künstlichen Stundenaufschlag angezeigt. Der Ausgangsflow
+enthielt einen festen +10-Stunden-Aufschlag; dieser anlagenspezifische Workaround
+wurde nicht in eine universelle Integration übernommen. Unverwendete Sequenzen
+ohne zugehörige Auswertung (329 und 1999) werden nicht zusätzlich abgefragt.
 
-## Verhalten bei Fehlern
+## Aktualisierung von 0.1.3
 
-- Ausschließlich **FC03**. Es gibt keine Schreibfunktion und keine Steuerung
-  von Dosierung oder Sollwerten.
-- Eine TCP-Verbindung pro Abfragezyklus; alle Anfragen erfolgen nacheinander.
-- Bei einer fehlgeschlagenen Anfrage wird der gesamte Zyklus verworfen. Die
-  betroffenen Entitäten werden nicht verfügbar und erholen sich nach erfolgreicher Abfrage.
-- NaN und unendliche FLOAT-Werte gelten als nicht verfügbar. Endliche Werte werden
-  nicht auf vermeintlich plausible Bereiche begrenzt; sie müssen zur Geräteanzeige passen.
-- Diagnosedownload enthält keine IP-Adresse. Hostname und Geräte-IP werden nicht
-  in dieses Repository geschrieben.
+Die gespeicherte IP und die eindeutigen Kennungen bestehender Messwert-Entitäten
+bleiben erhalten. Bisherige erweiterte Einstellungen werden durch das oben
+beschriebene feste Profil ersetzt. Zusätzliche Entitäten werden automatisch
+angelegt. Alte Entitäten für nicht im Profil enthaltene Kanäle können als nicht
+verfügbar bestehen bleiben; sie werden nicht automatisch gelöscht.
 
-## Verbindung ohne Home Assistant testen
+## Prüfstand
 
-Das beiliegende Diagnoseprogramm braucht nur Python ab 3.13, keine Zusatzpakete:
+27 Protokolltests prüfen Telegramme, exakte Profiladressen, gemischte Byte-
+Reihenfolgen, Text, Eingänge, Relais, Meldungen, Nichtverfügbarkeit und Erholung.
+Ein zusätzlicher Home-Assistant-Testlauf prüft das IP-Formular, Plattformen und
+Migration mit simulierten Gerätedaten. Ergebnisse stehen unter
+[GitHub Actions](https://github.com/Cupra85/Evoqua-700P/actions) und in
+[TEST_REPORT.md](TEST_REPORT.md).
 
-```sh
-python tools/probe.py 192.168.1.50
-python tools/probe.py 192.168.1.50 --channels ph temperature --unit-id 1 --status
-```
+Die Zuordnung ist aus dem bereitgestellten Flow abgeleitet. Ein Ende-zu-Ende-Test
+dieser Version an einer echten 700P steht noch aus. Auch endliche FLOAT-Werte
+können bei einer falschen Zuordnung falsch sein: Messwerte beim ersten Test mit
+der Geräteanzeige vergleichen. Das Paket ist kein offizielles Evoqua-Produkt.
 
-`192.168.1.50` ist eine Beispieladresse. Deine Geräte-IP einsetzen.
-Ein erfolgreicher Aufruf liefert JSON mit Gerätekennung, Softwareversion,
-Messwerten und Einheiten. Mit der Anzeige der 700 P vergleichen.
+Die [Aufnahme in den Marketplace-Katalog](https://github.com/hacs/default/pull/14943)
+ist beantragt und wartet auf die Freigabe des HACS-Teams. Bis dahin ist die
+Installation über das benutzerdefinierte Repository möglich.
 
-Bei fehlender Verbindung zuerst aktivierten Modbus-Port, IP, VLAN/Firewall und
-Unit-ID prüfen. Ein Registerfehler oder eine unpassende Gerätekennung kann an der
-Adressierung liegen: `--register-base 400000` ist als Diagnoseoption vorhanden.
-Falls Werte falsch dekodiert werden, stehen `--byte-order CDAB`, `BADC` oder `DCBA`
-zur Verfügung. Einstellungen nur anhand der Geräteanzeige bzw. eines Telegrammmitschnitts
-ändern. Die Byte-Reihenfolge gilt für 32-Bit-Zahlen; Text bleibt CP437 in Registerreihenfolge.
-Eine Firmware mit anderem Systemnamen als einer Kennung mit `700 P` wird abgewiesen.
-
-## GitHub
-
-- Repository: [Cupra85/Evoqua-700P](https://github.com/Cupra85/Evoqua-700P)
-- Fehlerberichte: [Issues](https://github.com/Cupra85/Evoqua-700P/issues)
-- Lizenz: MIT
-
-## Entwicklung und Prüfung
+## Diagnose und Entwicklung
 
 ```sh
+python tools/probe.py 192.0.2.10
 python -m unittest discover -s tests -p test_protocol.py -v
-python -m compileall -q custom_components tools tests
 python tools/validate_metadata.py
 ```
 
-Standardmäßig verwenden die Tests lokale TCP-Verbindungen zum Simulator. In
-Umgebungen ohne Netzwerkzugriff kann `EVOQUA_TEST_TRANSPORT=memory` gesetzt werden;
-dann wird derselbe Testumfang mit In-Memory-Datenströmen und ohne OS-Sockets geprüft.
-Geprüft werden alle Messkanäle,
-CP437, vier Byte-Reihenfolgen, Registerbasis und Unit-ID, fragmentierte Antworten,
-Statuscodes, Timeout, Abbruch, Wiederverbindung und fehlerhafte Telegramme.
-Der GitHub-Workflow führt diese Prüfungen unter Python 3.13 und 3.14 aus.
-Er ersetzt keine Home-Assistant- oder Hardwareprüfung.
+`192.0.2.10` ist eine Beispieladresse. Das Diagnoseprogramm verwendet standardmäßig
+dasselbe feste Profil wie Home Assistant. `--profile manual` aktiviert ausschließlich
+für Entwickler das frühere Handbuchprofil mit wählbarer Registerbasis/Byte-Reihenfolge.
+Für socketfreie Testumgebungen ist `EVOQUA_TEST_TRANSPORT=memory` verfügbar.
 
-## Quellen
+Home-Assistant-Tests: `pip install pytest-homeassistant`, danach
+`python -m pytest tests/test_ha.py -v` (passende Python-/Home-Assistant-Version).
 
-- Evoqua, **Elektronik-Modul 700 P**, W3T321511 Ausgabe 11-0620,
-  Kapitel 4.6 und Ethernet-Einstellungen:
-  [Herstelleranleitung als Spiegel](https://manualzz.com/doc/68426676/evoqua-wallace-and-tiernan-700-p-betriebsanleitung).
-- [Home Assistant: Config flow](https://contributors.home-assistant.io/core/integrations/config-flow/)
-- [Home Assistant: DataUpdateCoordinator](https://contributors.home-assistant.io/core/integrations/fetching-data/)
-- [Home Assistant: Options flow](https://contributors.home-assistant.io/core/integrations/options-flow/)
+Fehlerberichte: [Issues](https://github.com/Cupra85/Evoqua-700P/issues). Lizenz: MIT.

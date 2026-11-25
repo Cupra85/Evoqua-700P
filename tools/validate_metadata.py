@@ -15,7 +15,12 @@ assert manifest["config_flow"] is True
 assert manifest["requirements"] == []
 for path in [component / "strings.json", *sorted((component / "translations").glob("*.json"))]:
     data = json.loads(path.read_text(encoding="utf-8"))
-    assert set(load_client().CHANNELS) <= set(data["entity"]["sensor"]), path
+    api = load_client()
+    assert set(api.FLOW_POINTS) | set(api.FLOW_TEXTS) == set(data["entity"]["sensor"]), path
+    assert set(api.FLOW_BINARIES) == set(data["entity"]["binary_sensor"]), path
     assert "cannot_connect" in data["config"]["error"], path
     assert "reconfigure" in data["config"]["step"], path
+    for step in ("user", "reconfigure"):
+        assert set(data["config"]["step"][step]["data"]) == {"host"}, path
+    assert "options" not in data, path
 print("JSON, manifest and translation coverage: OK")

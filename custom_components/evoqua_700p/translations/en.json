@@ -4,55 +4,27 @@
     "step": {
       "user": {
         "title": "Evoqua 700P",
-        "description": "Connect your pool controller. Enable Modbus TCP port 502 on the device and select installed channels. Start with the default advanced settings.",
+        "description": "Enter only your 700P IP address. Enable Modbus TCP port 502 on the device. All other settings are applied automatically.",
         "data": {
-          "host": "IP address or hostname",
-          "port": "Modbus TCP port",
-          "unit_id": "Modbus unit ID",
-          "timeout": "Timeout per request (seconds)",
-          "register_base": "Register base (default: 400001)",
-          "byte_order": "32-bit byte order (default: ABCD)",
-          "channels": "Installed measurement channels",
-          "scan_interval": "Polling interval (seconds)",
-          "include_status": "Also read status and error registers"
+          "host": "IP address"
         }
       },
       "reconfigure": {
-        "title": "Change connection",
+        "title": "Evoqua 700P",
+        "description": "Enter only your 700P IP address. Enable Modbus TCP port 502 on the device. All other settings are applied automatically.",
         "data": {
-          "host": "IP address or hostname",
-          "port": "Modbus TCP port",
-          "unit_id": "Modbus unit ID",
-          "timeout": "Timeout per request (seconds)",
-          "register_base": "Register base (default: 400001)",
-          "byte_order": "32-bit byte order (default: ABCD)"
+          "host": "IP address"
         }
       }
     },
     "error": {
-      "cannot_connect": "No valid Modbus response. Check the IP address, enabled port 502, unit ID and register base.",
-      "invalid_device": "The system name does not identify a 700 P or the firmware is older than 1.31. Check the model and register base.",
-      "invalid_host": "Enter an IP address or hostname without http:// or a path."
+      "cannot_connect": "No valid response. Check the IP address and enable Modbus port 502 on the device.",
+      "invalid_device": "Cannot read the system name or firmware. Requires firmware 1.31 or newer with the 700P register profile.",
+      "invalid_host": "Enter a valid IPv4 or IPv6 address without http:// or a port."
     },
     "abort": {
-      "already_configured": "This connection is already configured.",
-      "reconfigure_successful": "Connection updated."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Channels and polling",
-        "data": {
-          "channels": "Installed measurement channels",
-          "scan_interval": "Polling interval (seconds)",
-          "include_status": "Also read status and error registers"
-        }
-      }
-    },
-    "error": {
-      "cannot_connect": "No valid Modbus response. Check the IP address, enabled port 502, unit ID and register base.",
-      "invalid_device": "The system name does not identify a 700 P or the firmware is older than 1.31. Check the model and register base."
+      "already_configured": "This IP address is already configured.",
+      "reconfigure_successful": "IP address updated."
     }
   },
   "entity": {
@@ -66,55 +38,193 @@
       "orp": {
         "name": "ORP"
       },
-      "total_chlorine": {
-        "name": "Total chlorine"
-      },
-      "conductivity": {
-        "name": "Conductivity"
-      },
       "temperature": {
         "name": "Temperature"
       },
-      "circulation": {
-        "name": "Circulation"
+      "chlorine_current_setpoint": {
+        "name": "Chlorine current setpoint"
       },
-      "analog_input_2": {
-        "name": "Analog input 2"
+      "ph_current_setpoint": {
+        "name": "pH current setpoint"
+      },
+      "chlorine_dosing": {
+        "name": "Chlorine dosing output"
+      },
+      "ph_dosing": {
+        "name": "pH dosing output"
+      },
+      "chlorine_setpoint": {
+        "name": "Chlorine setpoint (W)"
+      },
+      "chlorine_xp": {
+        "name": "Chlorine proportional band (Xp)"
+      },
+      "chlorine_tn": {
+        "name": "Chlorine integral time (Tn)"
+      },
+      "ph_setpoint": {
+        "name": "pH setpoint (W)"
+      },
+      "ph_xp": {
+        "name": "pH proportional band (Xp)"
+      },
+      "ph_tn": {
+        "name": "pH integral time (Tn)"
+      },
+      "chlorine_min1": {
+        "name": "Chlorine minimum 1"
+      },
+      "chlorine_max1": {
+        "name": "Chlorine maximum 1"
+      },
+      "chlorine_hyst1": {
+        "name": "Chlorine hysteresis 1"
+      },
+      "chlorine_min2": {
+        "name": "Chlorine minimum 2"
+      },
+      "chlorine_max2": {
+        "name": "Chlorine maximum 2"
+      },
+      "chlorine_hyst2": {
+        "name": "Chlorine hysteresis 2"
+      },
+      "ph_min1": {
+        "name": "pH minimum 1"
+      },
+      "ph_max1": {
+        "name": "pH maximum 1"
+      },
+      "ph_hyst1": {
+        "name": "pH hysteresis 1"
+      },
+      "ph_min2": {
+        "name": "pH minimum 2"
+      },
+      "ph_max2": {
+        "name": "pH maximum 2"
+      },
+      "ph_hyst2": {
+        "name": "pH hysteresis 2"
+      },
+      "orp_min1": {
+        "name": "ORP minimum 1"
+      },
+      "orp_max1": {
+        "name": "ORP maximum 1"
+      },
+      "orp_hyst1": {
+        "name": "ORP hysteresis 1"
+      },
+      "orp_min2": {
+        "name": "ORP minimum 2"
+      },
+      "orp_max2": {
+        "name": "ORP maximum 2"
+      },
+      "orp_hyst2": {
+        "name": "ORP hysteresis 2"
+      },
+      "temperature_min1": {
+        "name": "Temperature minimum 1"
+      },
+      "temperature_max1": {
+        "name": "Temperature maximum 1"
+      },
+      "temperature_hyst1": {
+        "name": "Temperature hysteresis 1"
+      },
+      "system_name": {
+        "name": "System name"
+      },
+      "software_version": {
+        "name": "Software version"
+      },
+      "device_date": {
+        "name": "Device date"
+      },
+      "device_time": {
+        "name": "Device time"
+      },
+      "operating_mode": {
+        "name": "Operating mode"
+      },
+      "error_text": {
+        "name": "Faults"
       },
       "chlorine_error_code": {
-        "name": "Chlorine error code"
-      },
-      "ph_error_code": {
-        "name": "pH error code"
-      },
-      "orp_error_code": {
-        "name": "ORP error code"
-      },
-      "total_chlorine_error_code": {
-        "name": "Total chlorine error code"
-      },
-      "conductivity_error_code": {
-        "name": "Conductivity error code"
+        "name": "Fault code"
       }
     },
     "binary_sensor": {
+      "di1": {
+        "name": "Digital input 1"
+      },
+      "di2": {
+        "name": "Digital input 2"
+      },
+      "di3": {
+        "name": "Digital input 3"
+      },
+      "alarm1": {
+        "name": "Alarm 1"
+      },
+      "alarm2": {
+        "name": "Alarm 2"
+      },
+      "alarm3": {
+        "name": "Alarm 3"
+      },
+      "alarm4": {
+        "name": "Alarm 4"
+      },
+      "relay1": {
+        "name": "Relay K1"
+      },
+      "relay2": {
+        "name": "Relay K2"
+      },
+      "relay3": {
+        "name": "Relay K3"
+      },
+      "relay4": {
+        "name": "Relay K4"
+      },
+      "relay5": {
+        "name": "Relay K5"
+      },
+      "relay6": {
+        "name": "Relay K6"
+      },
+      "relay7": {
+        "name": "Relay K7"
+      },
+      "relay8": {
+        "name": "Relay K8"
+      },
+      "relay21": {
+        "name": "Relay K21"
+      },
+      "relay22": {
+        "name": "Relay K22"
+      },
+      "relay23": {
+        "name": "Relay K23"
+      },
+      "relay24": {
+        "name": "Relay K24"
+      },
+      "sample_water": {
+        "name": "Sample water"
+      },
       "sample_water_stop": {
         "name": "Sample water stop"
       },
+      "shock_chlorination": {
+        "name": "Shock chlorination"
+      },
       "chlorine_problem": {
-        "name": "Chlorine fault"
-      },
-      "ph_problem": {
-        "name": "pH fault"
-      },
-      "orp_problem": {
-        "name": "ORP fault"
-      },
-      "total_chlorine_problem": {
-        "name": "Total chlorine fault"
-      },
-      "conductivity_problem": {
-        "name": "Conductivity fault"
+        "name": "Fault"
       }
     }
   }
