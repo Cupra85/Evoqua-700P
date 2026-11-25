@@ -1,48 +1,47 @@
-# Prüfstand 25.11.2026 – Version 0.1.4
+# Prüfstand – Version 0.1.5
 
-## Bestanden
+## Lokale Prüfungen
 
-- 27 Protokolltests: alle bisherigen 17 Prüfungen und zehn zusätzliche Tests
-  für das aus Node-RED übernommene Leseprofil.
-- Auf GitHub unter Python 3.13 und 3.14 mit einem echten lokalen TCP-Simulator.
-  Lokal zusätzlich mit simulierten Datenströmen ohne OS-Sockets geprüft.
-- Exakte Wire-Adressen, FC03, Unit-ID, gemischte FLOAT-Reihenfolgen,
-  bytevertauschter Text, frei einstellbarer Systemname „Pool“ und V:2.06.
-- Eingänge, invertierte Messwasseranzeige, Alarmbits, Relais K1–K8 und K21–K24,
-  Betriebsart, Stoßchlorung und vorzeichenlose 32-Bit-Fehlerauswertung.
-- Fehlende Antworten, Timeout, Wiederverbindung, fragmentierte und fehlerhafte
-  Telegramme, NaN/Infinity sowie lange Fehlerlisten ohne zu lange HA-Zustände.
-- JSON, Übersetzungen und Metadaten; beide Formulare enthalten nur `host`.
-- Zehn Tests mit echtem Home Assistant **2026.11.3**, Python **3.14.10** und
-  simulierten Gerätedaten: IP-Eingabe und Speicherung, ungültige IPs,
-  Verbindungsfehler, doppelte Einrichtung, Entitäten laden/entladen,
-  Migration bestehender Einträge und IP-Neukonfiguration.
+- 41 Protokolltests mit fragmentierten simulierten Datenströmen bestanden.
+- Unabhängige Registerfixtures nach Evoqua v2-Anleitung, Abschnitt 4.6.
+- Alle 45 RW-FLOAT-Adressen und exakte FC16-Nutzdaten geprüft.
+- FC06 Start/Stopp, Erhalt anderer Funktionsbits, Schutz gegen gesetztes Befehlsbit.
+- Frische Bereiche/Grenzwertpaare, ungültige Werte, NaN/Infinity, identische Zahlen,
+  Schreibabstand und Verbindungsfreigabe geprüft.
+- Abweichendes Rücklesen, falsches Echo, Modbus-Ausnahme, Timeout und Verlust der
+  Bestätigung nach wirksamem Schreiben: kein automatischer Wiederholversuch.
+- Abfragen senden ausschließlich FC03, auch nach einem Schreibfehler.
+- Optionale Register, zusätzliche Kanäle, Alarme 5–8, Betriebsarten und Fehlercodes.
+- JSON, Übersetzungsabdeckung, Kompilierung und IP-only-Formulare bestanden.
 
-[Erfolgreicher Testlauf](https://github.com/Cupra85/Evoqua-700P/actions/runs/45682152090).
-[Home-Assistant-Testergebnisse](https://github.com/Cupra85/Evoqua-700P/actions/runs/45682152090/job/139445194849).
+## GitHub-Prüfungen
 
-Home Assistant lädt ausschließlich Sensoren und Binärsensoren; es werden keine
-Schalter, Schreibdienste oder steuerbaren Zahlenfelder angelegt.
+Die Workflows prüfen TCP unter Python 3.13/3.14 sowie die Integration mit echtem
+Home Assistant und simulierten Gerätedaten. HA-Tests prüfen die vier Plattformen,
+IP-only-Formulare, Migration, explizite Number-/Button-Bedienung und Fehlerweitergabe.
+HACS und hassfest prüfen Paket und Metadaten ohne ausgeschaltete Prüfungen.
+Der zugehörige Lauf wird vor Veröffentlichung geprüft:
+[GitHub Actions](https://github.com/Cupra85/Evoqua-700P/actions).
 
-## Herkunft und praktische Grenzen
+## Herkunft und Grenzen
 
-Der vorhandene Node-RED-Flow „700P Lesen“ wurde über die lesende API eingesehen.
-Die ausgewerteten Register und deren jeweilige Dekodierung wurden übernommen.
-Node-RED und vorhandene Home-Assistant-Entitäten wurden dabei nicht verändert.
-Private Verbindungsdaten und der vollständige Workflow werden nicht veröffentlicht.
+Referenz: Evoqua Originalbetriebsanleitung ab Version 2.00, Ausgabe 11-0620,
+WT.050.810.010.DD.IM.0620, Abschnitt 4.6, Seiten 30–37.
+FLOAT-/Textreihenfolge zusätzlich anhand der Herstellerdiagramme in der englischen
+Anleitung WT.050.810.010.DE.IM.0718, Seiten 47–48 abgeglichen.
+Die vorhandenen Node-RED-Verbindungsparameter bestimmen Port, Unit-ID und Timeout.
+Private IPs und vollständige Workflows sind nicht Teil des öffentlichen Projekts.
 
-Die Prüfung bestätigt die Übereinstimmung mit der ausgelesenen Flow-Konfiguration,
-nicht die physikalische Richtigkeit jeder Registerzuordnung. Bei einigen Istwerten
-des vorhandenen Flows sind Werte auffällig; eine Verschiebung um ein Register
-kann erst anhand echter Rohregister und der Geräteanzeige abschließend beurteilt
-werden. Ein direkter FC03-Vergleich konnte in der Entwicklungsumgebung wegen
-gesperrter Socket-Verbindungen nicht ausgeführt werden. Die neue Integration
-wurde daher noch nicht Ende zu Ende mit der echten Anlage verifiziert.
+0.1.5 korrigiert die Messwertabfragen aus dem ursprünglichen Flow gemäß Anleitung:
+einbasierte Handbuchregister und CDAB statt des um ein Register verschobenen ABCD.
+Softwaretests bestätigen diese dokumentierte Zuordnung. Ein Abgleich der neuen
+Integration mit tatsächlichen Rohregistern und Geräteanzeige steht noch aus.
+Die lokale Umgebung erlaubt keinen direkten Socket-Zugriff auf die Anlage.
+Es wurden keine Parameter einer echten Anlage geändert und keine echten
+Dosieraktionen ausgelöst. HA-/Node-RED-Konfigurationen wurden nicht verändert.
 
-Vor Verwendung der Messwerte in Automationen müssen diese mit der Geräteanzeige
-verglichen werden. Es werden keine Werte anhand vermeintlich plausibler Bereiche
-umgedeutet oder still auf andere Register umgestellt.
-
-Abweichungen zum Ausgangsflow sind ausdrücklich dokumentiert: alle Werte werden
-alle zehn Sekunden abgefragt, auch Relais; die Gerätezeit erhält keinen festen
-+10-Stunden-Aufschlag. Unverwendete Sequenzen ohne Auswertung sind ausgelassen.
+Die exakte Umrechnung der Hysteresegrenze 1–25 Anzeigedigits ist bei variablen
+Messbereichen nicht per Modbus beschrieben. Roh-FLOAT in Geräteeinheit, positive
+Spannenprüfung und exaktes Rücklesen; konkrete Digitgrenze am Gerät prüfen.
+Der Start/Stopp-Befehl bestätigt nur den Modbus-Empfang, nicht den Prozessstart.
+Iststatus und Geräteschutzfunktionen bleiben maßgeblich.
