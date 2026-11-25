@@ -32,26 +32,107 @@
       "chlorine": {
         "name": "Chlor"
       },
-      "ph": {
-        "name": "pH"
+      "chlorine_range_min": {
+        "name": "Chlor Messbereich Anfang"
       },
-      "orp": {
-        "name": "Redox"
-      },
-      "temperature": {
-        "name": "Temperatur"
+      "chlorine_range_max": {
+        "name": "Chlor Messbereich Ende"
       },
       "chlorine_current_setpoint": {
         "name": "Chlor aktueller Sollwert"
       },
-      "ph_current_setpoint": {
-        "name": "pH aktueller Sollwert"
-      },
       "chlorine_dosing": {
         "name": "Chlor Dosierleistung"
       },
+      "ph": {
+        "name": "pH"
+      },
+      "ph_range_min": {
+        "name": "pH Messbereich Anfang"
+      },
+      "ph_range_max": {
+        "name": "pH Messbereich Ende"
+      },
+      "ph_current_setpoint": {
+        "name": "pH aktueller Sollwert"
+      },
       "ph_dosing": {
         "name": "pH Dosierleistung"
+      },
+      "orp": {
+        "name": "Redox"
+      },
+      "orp_range_min": {
+        "name": "Redox Messbereich Anfang"
+      },
+      "orp_range_max": {
+        "name": "Redox Messbereich Ende"
+      },
+      "orp_current_setpoint": {
+        "name": "Redox aktueller Sollwert"
+      },
+      "orp_dosing": {
+        "name": "Redox Dosierleistung"
+      },
+      "total_chlorine": {
+        "name": "Gesamtchlor"
+      },
+      "total_chlorine_range_min": {
+        "name": "Gesamtchlor Messbereich Anfang"
+      },
+      "total_chlorine_range_max": {
+        "name": "Gesamtchlor Messbereich Ende"
+      },
+      "total_chlorine_current_setpoint": {
+        "name": "Gesamtchlor aktueller Sollwert"
+      },
+      "total_chlorine_dosing": {
+        "name": "Gesamtchlor Dosierleistung"
+      },
+      "conductivity": {
+        "name": "Leitfähigkeit"
+      },
+      "conductivity_range_min": {
+        "name": "Leitfähigkeit Messbereich Anfang"
+      },
+      "conductivity_range_max": {
+        "name": "Leitfähigkeit Messbereich Ende"
+      },
+      "conductivity_current_setpoint": {
+        "name": "Leitfähigkeit aktueller Sollwert"
+      },
+      "conductivity_dosing": {
+        "name": "Leitfähigkeit Dosierleistung"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "temperature_range_min": {
+        "name": "Temperatur Messbereich Anfang"
+      },
+      "temperature_range_max": {
+        "name": "Temperatur Messbereich Ende"
+      },
+      "circulation": {
+        "name": "Umwälzung"
+      },
+      "circulation_range_min": {
+        "name": "Umwälzung Messbereich Anfang"
+      },
+      "circulation_range_max": {
+        "name": "Umwälzung Messbereich Ende"
+      },
+      "analog_input_2": {
+        "name": "Analogeingang 2"
+      },
+      "analog_input_2_range_min": {
+        "name": "Analogeingang 2 Messbereich Anfang"
+      },
+      "analog_input_2_range_max": {
+        "name": "Analogeingang 2 Messbereich Ende"
+      },
+      "flocculation_dosing": {
+        "name": "Flockung Dosierleistung"
       },
       "chlorine_setpoint": {
         "name": "Chlor Sollwert (W)"
@@ -70,6 +151,24 @@
       },
       "ph_tn": {
         "name": "pH I-Anteil (Tn)"
+      },
+      "total_chlorine_setpoint": {
+        "name": "Gesamtchlor Sollwert (W)"
+      },
+      "total_chlorine_xp": {
+        "name": "Gesamtchlor P-Anteil (Xp)"
+      },
+      "total_chlorine_tn": {
+        "name": "Gesamtchlor I-Anteil (Tn)"
+      },
+      "conductivity_setpoint": {
+        "name": "Leitfähigkeit Sollwert (W)"
+      },
+      "conductivity_xp": {
+        "name": "Leitfähigkeit P-Anteil (Xp)"
+      },
+      "conductivity_tn": {
+        "name": "Leitfähigkeit I-Anteil (Tn)"
       },
       "chlorine_min1": {
         "name": "Chlor Min1"
@@ -125,6 +224,42 @@
       "orp_hyst2": {
         "name": "Redox Hysterese2"
       },
+      "total_chlorine_min1": {
+        "name": "Gesamtchlor Min1"
+      },
+      "total_chlorine_max1": {
+        "name": "Gesamtchlor Max1"
+      },
+      "total_chlorine_hyst1": {
+        "name": "Gesamtchlor Hysterese1"
+      },
+      "total_chlorine_min2": {
+        "name": "Gesamtchlor Min2"
+      },
+      "total_chlorine_max2": {
+        "name": "Gesamtchlor Max2"
+      },
+      "total_chlorine_hyst2": {
+        "name": "Gesamtchlor Hysterese2"
+      },
+      "conductivity_min1": {
+        "name": "Leitfähigkeit Min1"
+      },
+      "conductivity_max1": {
+        "name": "Leitfähigkeit Max1"
+      },
+      "conductivity_hyst1": {
+        "name": "Leitfähigkeit Hysterese1"
+      },
+      "conductivity_min2": {
+        "name": "Leitfähigkeit Min2"
+      },
+      "conductivity_max2": {
+        "name": "Leitfähigkeit Max2"
+      },
+      "conductivity_hyst2": {
+        "name": "Leitfähigkeit Hysterese2"
+      },
       "temperature_min1": {
         "name": "Temperatur Min1"
       },
@@ -147,13 +282,97 @@
         "name": "Gerätezeit"
       },
       "operating_mode": {
-        "name": "Betriebsart"
+        "name": "Chlor Betriebsart"
+      },
+      "ph_operating_mode": {
+        "name": "pH Betriebsart"
+      },
+      "total_chlorine_operating_mode": {
+        "name": "Gesamtchlor Betriebsart"
+      },
+      "conductivity_operating_mode": {
+        "name": "Leitfähigkeit Betriebsart"
       },
       "error_text": {
-        "name": "Fehler"
+        "name": "Chlor Fehler"
+      },
+      "ph_error_text": {
+        "name": "pH Fehler"
+      },
+      "orp_error_text": {
+        "name": "Redox Fehler"
+      },
+      "total_chlorine_error_text": {
+        "name": "Gesamtchlor Fehler"
+      },
+      "conductivity_error_text": {
+        "name": "Leitfähigkeit Fehler"
       },
       "chlorine_error_code": {
-        "name": "Fehlercode"
+        "name": "Chlor Fehlercode"
+      },
+      "ph_error_code": {
+        "name": "pH Fehlercode"
+      },
+      "orp_error_code": {
+        "name": "Redox Fehlercode"
+      },
+      "total_chlorine_error_code": {
+        "name": "Gesamtchlor Fehlercode"
+      },
+      "conductivity_error_code": {
+        "name": "Leitfähigkeit Fehlercode"
+      },
+      "chlorine_unit": {
+        "name": "Chlor Einheit"
+      },
+      "ph_unit": {
+        "name": "pH Einheit"
+      },
+      "orp_unit": {
+        "name": "Redox Einheit"
+      },
+      "total_chlorine_unit": {
+        "name": "Gesamtchlor Einheit"
+      },
+      "conductivity_unit": {
+        "name": "Leitfähigkeit Einheit"
+      },
+      "temperature_unit": {
+        "name": "Temperatur Einheit"
+      },
+      "circulation_unit": {
+        "name": "Umwälzung Einheit"
+      },
+      "analog_input_2_unit": {
+        "name": "Analogeingang 2 Einheit"
+      },
+      "alarm_word": {
+        "name": "alarm word"
+      },
+      "input_word": {
+        "name": "input word"
+      },
+      "relay_word": {
+        "name": "relay word"
+      },
+      "aux_relay_word": {
+        "name": "aux relay word"
+      },
+      "chlorine_mode_code": {
+        "name": "chlorine mode code"
+      },
+      "ph_mode_code": {
+        "name": "ph mode code"
+      },
+      "total_chlorine_mode_code": {
+        "name": "total chlorine mode code"
+      },
+      "conductivity_mode_code": {
+        "name": "conductivity mode code"
+      },
+      "function_word": {
+        "name": "Funktionswort"
       }
     },
     "binary_sensor": {
@@ -177,6 +396,18 @@
       },
       "alarm4": {
         "name": "Alarm 4"
+      },
+      "alarm5": {
+        "name": "Alarm 5"
+      },
+      "alarm6": {
+        "name": "Alarm 6"
+      },
+      "alarm7": {
+        "name": "Alarm 7"
+      },
+      "alarm8": {
+        "name": "Alarm 8"
       },
       "relay1": {
         "name": "Relais K1"
@@ -224,7 +455,161 @@
         "name": "Stoßchlorung"
       },
       "chlorine_problem": {
-        "name": "Störung"
+        "name": "Chlor Störung"
+      },
+      "ph_problem": {
+        "name": "pH Störung"
+      },
+      "orp_problem": {
+        "name": "Redox Störung"
+      },
+      "total_chlorine_problem": {
+        "name": "Gesamtchlor Störung"
+      },
+      "conductivity_problem": {
+        "name": "Leitfähigkeit Störung"
+      }
+    },
+    "number": {
+      "chlorine_setpoint": {
+        "name": "Chlor Sollwert (W)"
+      },
+      "chlorine_xp": {
+        "name": "Chlor P-Anteil (Xp)"
+      },
+      "chlorine_tn": {
+        "name": "Chlor I-Anteil (Tn)"
+      },
+      "ph_setpoint": {
+        "name": "pH Sollwert (W)"
+      },
+      "ph_xp": {
+        "name": "pH P-Anteil (Xp)"
+      },
+      "ph_tn": {
+        "name": "pH I-Anteil (Tn)"
+      },
+      "total_chlorine_setpoint": {
+        "name": "Gesamtchlor Sollwert (W)"
+      },
+      "total_chlorine_xp": {
+        "name": "Gesamtchlor P-Anteil (Xp)"
+      },
+      "total_chlorine_tn": {
+        "name": "Gesamtchlor I-Anteil (Tn)"
+      },
+      "conductivity_setpoint": {
+        "name": "Leitfähigkeit Sollwert (W)"
+      },
+      "conductivity_xp": {
+        "name": "Leitfähigkeit P-Anteil (Xp)"
+      },
+      "conductivity_tn": {
+        "name": "Leitfähigkeit I-Anteil (Tn)"
+      },
+      "chlorine_min1": {
+        "name": "Chlor Min1"
+      },
+      "chlorine_max1": {
+        "name": "Chlor Max1"
+      },
+      "chlorine_hyst1": {
+        "name": "Chlor Hysterese1"
+      },
+      "chlorine_min2": {
+        "name": "Chlor Min2"
+      },
+      "chlorine_max2": {
+        "name": "Chlor Max2"
+      },
+      "chlorine_hyst2": {
+        "name": "Chlor Hysterese2"
+      },
+      "ph_min1": {
+        "name": "pH Min1"
+      },
+      "ph_max1": {
+        "name": "pH Max1"
+      },
+      "ph_hyst1": {
+        "name": "pH Hysterese1"
+      },
+      "ph_min2": {
+        "name": "pH Min2"
+      },
+      "ph_max2": {
+        "name": "pH Max2"
+      },
+      "ph_hyst2": {
+        "name": "pH Hysterese2"
+      },
+      "orp_min1": {
+        "name": "Redox Min1"
+      },
+      "orp_max1": {
+        "name": "Redox Max1"
+      },
+      "orp_hyst1": {
+        "name": "Redox Hysterese1"
+      },
+      "orp_min2": {
+        "name": "Redox Min2"
+      },
+      "orp_max2": {
+        "name": "Redox Max2"
+      },
+      "orp_hyst2": {
+        "name": "Redox Hysterese2"
+      },
+      "total_chlorine_min1": {
+        "name": "Gesamtchlor Min1"
+      },
+      "total_chlorine_max1": {
+        "name": "Gesamtchlor Max1"
+      },
+      "total_chlorine_hyst1": {
+        "name": "Gesamtchlor Hysterese1"
+      },
+      "total_chlorine_min2": {
+        "name": "Gesamtchlor Min2"
+      },
+      "total_chlorine_max2": {
+        "name": "Gesamtchlor Max2"
+      },
+      "total_chlorine_hyst2": {
+        "name": "Gesamtchlor Hysterese2"
+      },
+      "conductivity_min1": {
+        "name": "Leitfähigkeit Min1"
+      },
+      "conductivity_max1": {
+        "name": "Leitfähigkeit Max1"
+      },
+      "conductivity_hyst1": {
+        "name": "Leitfähigkeit Hysterese1"
+      },
+      "conductivity_min2": {
+        "name": "Leitfähigkeit Min2"
+      },
+      "conductivity_max2": {
+        "name": "Leitfähigkeit Max2"
+      },
+      "conductivity_hyst2": {
+        "name": "Leitfähigkeit Hysterese2"
+      },
+      "temperature_min1": {
+        "name": "Temperatur Min1"
+      },
+      "temperature_max1": {
+        "name": "Temperatur Max1"
+      },
+      "temperature_hyst1": {
+        "name": "Temperatur Hysterese1"
+      }
+    },
+    "button": {
+      "shock_start_stop": {
+        "name": "Stoßchlorung Start/Stopp"
       }
     }
   }
