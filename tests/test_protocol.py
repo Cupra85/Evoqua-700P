@@ -355,6 +355,147 @@ class ProtocolTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(api.normalize_unit("μS/cm"), "µS/cm")
 
 
+class FlowProfileTests(unittest.IsolatedAsyncioTestCase):
+    """Fixtures transcribed from the deployed Node-RED read sequencers."""
+
+    if MEMORY:
+        loop_factory = MemoryOnlyEventLoop
+
+    async def asyncSetUp(self):
+        self.controller = await Controller().start()
+        self.controller.registers.clear()
+        self.client = api.EvoquaClient("127.0.0.1", self.controller.port, timeout=0.3,
+                                       profile="node_red_206")
+        if MEMORY:
+            self.connection_patch = patch.object(api.asyncio, "open_connection", self.controller.connect_memory)
+            self.connection_patch.start()
+        self.text(0, "Pool", 20)
+        self.text(10, "V:2.06", 10)
+        self.text(15, "25.11.2026", 10)
+        self.text(20, "08:51", 6)
+        self.basic_addresses = [100, 115, 130, 175, 111, 126, 113, 128]
+        self.parameter_addresses = [
+            999, 1001, 1003, 1005, 1007, 1009,
+            1049, 1051, 1053, 1055, 1057, 1059,
+            1061, 1063, 1065, 1067, 1069, 1071,
+            1073, 1075, 1077, 1079, 1081, 1083, 1109, 1111, 1113,
+        ]
+        for address, value in zip(self.basic_addresses, [0.65, 7.2, 740, 26.5, 0.9, 7.8, 25, 30]):
+            self.number(address, value, "ABCD")
+        for address in self.parameter_addresses:
+            self.number(address, 1.25, "CDAB")
+        for address, value in {299: 5, 300: 12, 301: 0x81, 302: 9, 303: 0x8022,
+                               307: 1, 308: 0x8010}.items():
+            self.controller.registers[400001 + address] = value
+
+    def text(self, address, value, size):
+        raw = value.encode("ascii").ljust(size, b"\x00")[:size]
+        raw = b"".join(raw[i:i+2][::-1] for i in range(0, len(raw), 2))
+        for i, word in enumerate(struct.unpack(f">{size // 2}H", raw)):
+            self.controller.registers[400001 + address + i] = word
+
+    def number(self, address, value, order):
+        self.controller.order = order
+        self.controller.number(400001 + address, value)
+
+    async def asyncTearDown(self):
+        if MEMORY:
+            self.connection_patch.stop()
+        await self.controller.stop()
+
+    async def snapshot(self):
+        return await self.client.async_snapshot(["chlorine", "ph", "orp", "temperature"], True)
+
+    async def test_exact_flow_wire_addresses_and_no_writes(self):
+        result = await self.snapshot()
+        self.assertEqual(len(result.measurements), 35)
+        self.assertEqual(self.controller.requests, [
+            (3, 0, 15, 1),
+            *[(3, address, 2, 1) for address in self.basic_addresses + self.parameter_addresses],
+            (3, 299, 2, 1), (3, 300, 2, 1), (3, 301, 1, 1), (3, 302, 1, 1),
+            (3, 303, 2, 1), (3, 307, 2, 1), (3, 15, 5, 1), (3, 20, 3, 1),
+        ])
+
+    async def test_mixed_float_orders_and_fixed_units(self):
+        result = await self.snapshot()
+        self.assertAlmostEqual(result.measurements["chlorine"].value, 0.65, places=5)
+        self.assertAlmostEqual(result.measurements["ph"].value, 7.2, places=5)
+        self.assertEqual(result.measurements["chlorine_dosing"].value, 25)
+        self.assertEqual(result.measurements["chlorine_setpoint"].value, 1.25)
+        self.assertEqual(result.measurements["temperature_hyst1"].value, 1.25)
+        self.assertIsNone(result.measurements["ph_setpoint"].unit)
+        self.assertEqual(result.measurements["chlorine_setpoint"].unit, "mg/L")
+
+    async def test_custom_system_name_and_swapped_firmware(self):
+        result = await self.snapshot()
+        self.assertEqual(result.system_name, "Pool")
+        self.assertEqual(result.software, "V:2.06")
+        self.assertEqual(result.values["device_date"], "25.11.2026")
+        # Do not copy the installation-specific +10 hour workaround.
+        self.assertEqual(result.values["device_time"], "08:51")
+
+    async def test_digital_inputs_alarms_and_sample_water_polarity(self):
+        bits = (await self.snapshot()).binaries
+        self.assertFalse(bits["di1"])
+        self.assertFalse(bits["di2"])
+        self.assertTrue(bits["di3"])
+        self.assertTrue(bits["sample_water_stop"])
+        self.assertFalse(bits["sample_water"])
+        self.assertTrue(bits["alarm1"])
+        self.assertFalse(bits["alarm2"])
+        self.assertTrue(bits["alarm3"])
+        self.assertFalse(bits["alarm4"])
+
+    async def test_relay_bits_and_operating_mode(self):
+        result = await self.snapshot()
+        bits = result.binaries
+        for key in ("relay1", "relay8", "relay21", "relay24", "shock_chlorination"):
+            self.assertTrue(bits[key], key)
+        for key in ("relay2", "relay22", "relay23"):
+            self.assertFalse(bits[key], key)
+        self.assertEqual(result.details["operating_mode"],
+                         ["Automatik", "Regler Stopp (Yout=0%)", "Stoßchlorung aktiv"])
+
+    async def test_unsigned_low_word_first_error_flags(self):
+        result = await self.snapshot()
+        self.assertEqual(result.values["chlorine_error_code"], 0x80100001)
+        self.assertEqual(result.details["error_text"],
+                         ["Nullpunkt Kalibrierung", "Kein Messwasser", "Speicherfehler"])
+        self.assertTrue(result.binaries["chlorine_problem"])
+
+    async def test_empty_and_long_fault_states(self):
+        for raw in (0, 0xFFFFFFFF):
+            self.controller.registers[400308] = raw & 0xFFFF
+            self.controller.registers[400309] = raw >> 16
+            result = await self.snapshot()
+            self.assertLessEqual(len(result.values["error_text"]), 255)
+            if raw == 0:
+                self.assertEqual(result.values["error_text"], "Keine Fehler")
+                self.assertFalse(result.binaries["chlorine_problem"])
+            else:
+                self.assertEqual(len(result.details["error_text"]), 32)
+
+    async def test_nan_parameter_is_unavailable_and_zero_preserved(self):
+        self.number(999, math.nan, "CDAB")
+        self.number(113, 0, "ABCD")
+        result = await self.snapshot()
+        self.assertIsNone(result.measurements["chlorine_setpoint"].value)
+        self.assertEqual(result.measurements["chlorine_dosing"].value, 0)
+
+    async def test_invalid_firmware_rejected_before_measurements(self):
+        self.text(10, "garbage", 10)
+        with self.assertRaises(api.InvalidDevice):
+            await self.snapshot()
+        self.assertEqual(len(self.controller.requests), 1)
+
+    async def test_timeout_recovers_with_profile(self):
+        self.controller.mode = "timeout"
+        with self.assertRaises(api.EvoquaError):
+            await self.snapshot()
+        self.controller.mode = None
+        self.assertEqual((await self.snapshot()).system_name, "Pool")
+
+
 if __name__ == "__main__":
     unittest.main()
 
