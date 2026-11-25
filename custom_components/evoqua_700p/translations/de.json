@@ -4,55 +4,27 @@
     "step": {
       "user": {
         "title": "Evoqua 700P",
-        "description": "Verbindung zur Pool-Messanlage einrichten. Am Gerät muss Modbus TCP auf Port 502 aktiviert sein. Nur vorhandene Kanäle auswählen. Erweiterte Werte zunächst unverändert lassen.",
+        "description": "Gib nur die IP-Adresse deiner 700P ein. Modbus TCP muss am Gerät auf Port 502 aktiviert sein. Alle weiteren Einstellungen werden automatisch gesetzt.",
         "data": {
-          "host": "IP-Adresse oder Hostname",
-          "port": "Modbus-TCP-Port",
-          "unit_id": "Modbus Unit-ID",
-          "timeout": "Zeitlimit je Anfrage (Sekunden)",
-          "register_base": "Registerbasis (Standard: 400001)",
-          "byte_order": "Byte-Reihenfolge für 32-Bit-Werte (Standard: ABCD)",
-          "channels": "Vorhandene Messkanäle",
-          "scan_interval": "Abfrageintervall (Sekunden)",
-          "include_status": "Status- und Fehlerregister zusätzlich auslesen"
+          "host": "IP-Adresse"
         }
       },
       "reconfigure": {
-        "title": "Verbindung ändern",
+        "title": "Evoqua 700P",
+        "description": "Gib nur die IP-Adresse deiner 700P ein. Modbus TCP muss am Gerät auf Port 502 aktiviert sein. Alle weiteren Einstellungen werden automatisch gesetzt.",
         "data": {
-          "host": "IP-Adresse oder Hostname",
-          "port": "Modbus-TCP-Port",
-          "unit_id": "Modbus Unit-ID",
-          "timeout": "Zeitlimit je Anfrage (Sekunden)",
-          "register_base": "Registerbasis (Standard: 400001)",
-          "byte_order": "Byte-Reihenfolge für 32-Bit-Werte (Standard: ABCD)"
+          "host": "IP-Adresse"
         }
       }
     },
     "error": {
-      "cannot_connect": "Keine gültige Modbus-Antwort. IP, Port 502, Unit-ID und aktivierten Modbus-Port am Gerät prüfen. Bei Registerfehlern die Registerbasis prüfen.",
-      "invalid_device": "Die Gerätekennung entspricht keiner 700 P oder die Firmware ist älter als 1.31. Modell und Registerbasis prüfen.",
-      "invalid_host": "Nur eine IP-Adresse oder einen Hostnamen eingeben, ohne http:// oder Pfad."
+      "cannot_connect": "Keine gültige Antwort. IP-Adresse und aktivierten Modbus-Port 502 am Gerät prüfen.",
+      "invalid_device": "Systemname oder Softwareversion konnten nicht gelesen werden. Unterstützt wird Firmware ab 1.31 mit dem 700P-Registerprofil.",
+      "invalid_host": "Eine gültige IPv4- oder IPv6-Adresse ohne http:// oder Port eingeben."
     },
     "abort": {
-      "already_configured": "Diese Verbindung ist bereits eingerichtet.",
-      "reconfigure_successful": "Die Verbindung wurde aktualisiert."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Messkanäle und Abfrage",
-        "data": {
-          "channels": "Vorhandene Messkanäle",
-          "scan_interval": "Abfrageintervall (Sekunden)",
-          "include_status": "Status- und Fehlerregister zusätzlich auslesen"
-        }
-      }
-    },
-    "error": {
-      "cannot_connect": "Keine gültige Modbus-Antwort. IP, Port 502, Unit-ID und aktivierten Modbus-Port am Gerät prüfen. Bei Registerfehlern die Registerbasis prüfen.",
-      "invalid_device": "Die Gerätekennung entspricht keiner 700 P oder die Firmware ist älter als 1.31. Modell und Registerbasis prüfen."
+      "already_configured": "Diese IP-Adresse ist bereits eingerichtet.",
+      "reconfigure_successful": "IP-Adresse aktualisiert."
     }
   },
   "entity": {
@@ -66,55 +38,193 @@
       "orp": {
         "name": "Redox"
       },
-      "total_chlorine": {
-        "name": "Gesamtchlor"
-      },
-      "conductivity": {
-        "name": "Leitfähigkeit"
-      },
       "temperature": {
         "name": "Temperatur"
       },
-      "circulation": {
-        "name": "Umwälzung"
+      "chlorine_current_setpoint": {
+        "name": "Chlor aktueller Sollwert"
       },
-      "analog_input_2": {
-        "name": "Analogeingang 2"
+      "ph_current_setpoint": {
+        "name": "pH aktueller Sollwert"
+      },
+      "chlorine_dosing": {
+        "name": "Chlor Dosierleistung"
+      },
+      "ph_dosing": {
+        "name": "pH Dosierleistung"
+      },
+      "chlorine_setpoint": {
+        "name": "Chlor Sollwert (W)"
+      },
+      "chlorine_xp": {
+        "name": "Chlor P-Anteil (Xp)"
+      },
+      "chlorine_tn": {
+        "name": "Chlor I-Anteil (Tn)"
+      },
+      "ph_setpoint": {
+        "name": "pH Sollwert (W)"
+      },
+      "ph_xp": {
+        "name": "pH P-Anteil (Xp)"
+      },
+      "ph_tn": {
+        "name": "pH I-Anteil (Tn)"
+      },
+      "chlorine_min1": {
+        "name": "Chlor Min1"
+      },
+      "chlorine_max1": {
+        "name": "Chlor Max1"
+      },
+      "chlorine_hyst1": {
+        "name": "Chlor Hysterese1"
+      },
+      "chlorine_min2": {
+        "name": "Chlor Min2"
+      },
+      "chlorine_max2": {
+        "name": "Chlor Max2"
+      },
+      "chlorine_hyst2": {
+        "name": "Chlor Hysterese2"
+      },
+      "ph_min1": {
+        "name": "pH Min1"
+      },
+      "ph_max1": {
+        "name": "pH Max1"
+      },
+      "ph_hyst1": {
+        "name": "pH Hysterese1"
+      },
+      "ph_min2": {
+        "name": "pH Min2"
+      },
+      "ph_max2": {
+        "name": "pH Max2"
+      },
+      "ph_hyst2": {
+        "name": "pH Hysterese2"
+      },
+      "orp_min1": {
+        "name": "Redox Min1"
+      },
+      "orp_max1": {
+        "name": "Redox Max1"
+      },
+      "orp_hyst1": {
+        "name": "Redox Hysterese1"
+      },
+      "orp_min2": {
+        "name": "Redox Min2"
+      },
+      "orp_max2": {
+        "name": "Redox Max2"
+      },
+      "orp_hyst2": {
+        "name": "Redox Hysterese2"
+      },
+      "temperature_min1": {
+        "name": "Temperatur Min1"
+      },
+      "temperature_max1": {
+        "name": "Temperatur Max1"
+      },
+      "temperature_hyst1": {
+        "name": "Temperatur Hysterese1"
+      },
+      "system_name": {
+        "name": "Systemname"
+      },
+      "software_version": {
+        "name": "Software-Version"
+      },
+      "device_date": {
+        "name": "Gerätedatum"
+      },
+      "device_time": {
+        "name": "Gerätezeit"
+      },
+      "operating_mode": {
+        "name": "Betriebsart"
+      },
+      "error_text": {
+        "name": "Fehler"
       },
       "chlorine_error_code": {
-        "name": "Chlor Fehlercode"
-      },
-      "ph_error_code": {
-        "name": "pH Fehlercode"
-      },
-      "orp_error_code": {
-        "name": "Redox Fehlercode"
-      },
-      "total_chlorine_error_code": {
-        "name": "Gesamtchlor Fehlercode"
-      },
-      "conductivity_error_code": {
-        "name": "Leitfähigkeit Fehlercode"
+        "name": "Fehlercode"
       }
     },
     "binary_sensor": {
+      "di1": {
+        "name": "Digitaleingang 1"
+      },
+      "di2": {
+        "name": "Digitaleingang 2"
+      },
+      "di3": {
+        "name": "Digitaleingang 3"
+      },
+      "alarm1": {
+        "name": "Alarm 1"
+      },
+      "alarm2": {
+        "name": "Alarm 2"
+      },
+      "alarm3": {
+        "name": "Alarm 3"
+      },
+      "alarm4": {
+        "name": "Alarm 4"
+      },
+      "relay1": {
+        "name": "Relais K1"
+      },
+      "relay2": {
+        "name": "Relais K2"
+      },
+      "relay3": {
+        "name": "Relais K3"
+      },
+      "relay4": {
+        "name": "Relais K4"
+      },
+      "relay5": {
+        "name": "Relais K5"
+      },
+      "relay6": {
+        "name": "Relais K6"
+      },
+      "relay7": {
+        "name": "Relais K7"
+      },
+      "relay8": {
+        "name": "Relais K8"
+      },
+      "relay21": {
+        "name": "Relais K21"
+      },
+      "relay22": {
+        "name": "Relais K22"
+      },
+      "relay23": {
+        "name": "Relais K23"
+      },
+      "relay24": {
+        "name": "Relais K24"
+      },
+      "sample_water": {
+        "name": "Messwasser"
+      },
       "sample_water_stop": {
-        "name": "Messwasser Stopp"
+        "name": "Messwasser-Stopp"
+      },
+      "shock_chlorination": {
+        "name": "Stoßchlorung"
       },
       "chlorine_problem": {
-        "name": "Chlor Störung"
-      },
-      "ph_problem": {
-        "name": "pH Störung"
-      },
-      "orp_problem": {
-        "name": "Redox Störung"
-      },
-      "total_chlorine_problem": {
-        "name": "Gesamtchlor Störung"
-      },
-      "conductivity_problem": {
-        "name": "Leitfähigkeit Störung"
+        "name": "Störung"
       }
     }
   }
