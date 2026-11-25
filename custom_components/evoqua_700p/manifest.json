@@ -1,6 +1,7 @@
 {
   "domain": "evoqua_700p",
   "name": "Evoqua 700P",
+  "categories": ["water.pools_spas"],
   "codeowners": ["@Cupra85"],
   "config_flow": true,
   "documentation": "https://github.com/Cupra85/Evoqua-700P",
