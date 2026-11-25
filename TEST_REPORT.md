@@ -1,0 +1,32 @@
+# Prüfstand 25.11.2026
+
+## Erfolgreich geprüft
+
+- Python 3.13.17: 17 Protokolltests mit simulierten Modbus-Datenströmen,
+  einschließlich weiterer Unterfälle für Byte-Reihenfolgen und fehlerhafte Antworten.
+- Registeradressen aller acht Messkanäle, FC03-Telegramme, Unit-ID und beide Registerbasen.
+- IEEE754, CP437 und Einheiten, UINT32-Fehlercodes, Nichtverfügbarkeit bei NaN/Infinity.
+- Timeouts, Abbruch, Wiederverbindung und aufeinanderfolgende gleichzeitige Abfragen.
+- Python-Syntax aller Integrations-, Werkzeug- und Testdateien.
+- JSON-Syntax, Manifest-Felder und Übersetzungsabdeckung (Deutsch/Englisch).
+- Versionskennung V2.06 und V:2.06 wird akzeptiert und unverändert weitergegeben.
+
+Ausgeführt mit `EVOQUA_TEST_TRANSPORT=memory`. Dabei werden die TCP-Streams
+simuliert; es findet keine Netzwerkverbindung statt. Das Produktionsmodul wird
+unverändert importiert, ausschließlich `asyncio.open_connection` wird im Test ersetzt.
+
+## Noch offen
+
+- Echte TCP-Verbindungen: Die Ausführungsumgebung ließ keine Netzwerkzugriffe zu.
+  Der beigefügte GitHub-Workflow führt dieselben Tests regulär mit TCP-Sockets aus.
+  Dieser Workflow wurde noch nicht auf GitHub gestartet.
+- Home-Assistant-Laufzeit und HACS: Zusatzpakete konnten wegen fehlender
+  Namensauflösung zu PyPI nicht installiert werden. Es liegt kein ausgeführter
+  Home-Assistant-Kompatibilitätstest vor.
+- Hardware: Firmware V2.06 laut Nutzer. Die IP-Adresse ist absichtlich universell
+  und wird erst in Home Assistant abgefragt; sie wird für die Entwicklung nicht
+  benötigt. Unit-ID, vorhandene Kanäle, Registerbasis und Byte-Reihenfolge müssen
+  bei der Einrichtung anhand der echten Anlage bestätigt werden.
+
+Die Quellen und Annahmen stehen in README.md. Dieses Paket ist eine vorbereitete
+Erstversion und darf noch nicht als an der realen Anlage verifiziert bezeichnet werden.
