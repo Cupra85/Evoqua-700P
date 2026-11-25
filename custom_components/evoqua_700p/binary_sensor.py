@@ -21,7 +21,7 @@ class EvoquaStatus(EvoquaEntity, BinarySensorEntity):
     def __init__(self, coordinator, key: str) -> None:
         super().__init__(coordinator, key)
         self.key = key
-        if key.startswith("alarm") or key in ("sample_water_stop", "chlorine_problem"):
+        if key.startswith("alarm") or key == "sample_water_stop" or key.endswith("_problem"):
             self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_icon = "mdi:electric-switch" if key.startswith("relay") else "mdi:information-outline"
 
