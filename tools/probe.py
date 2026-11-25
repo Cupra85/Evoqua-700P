@@ -22,6 +22,7 @@ async def main() -> int:
     api = load_client()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("host")
+    parser.add_argument("--profile", choices=(api.FLOW_PROFILE, "manual"), default=api.FLOW_PROFILE)
     parser.add_argument("--port", type=int, default=502)
     parser.add_argument("--unit-id", type=int, default=1)
     parser.add_argument("--timeout", type=float, default=5)
@@ -31,7 +32,7 @@ async def main() -> int:
     parser.add_argument("--status", action="store_true")
     args = parser.parse_args()
     client = api.EvoquaClient(
-        args.host, args.port, args.unit_id, args.timeout, args.register_base, args.byte_order,
+        args.host, args.port, args.unit_id, args.timeout, args.register_base, args.byte_order, args.profile,
     )
     try:
         snapshot = await client.async_snapshot(args.channels, args.status)
