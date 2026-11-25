@@ -1,5 +1,7 @@
 # Evoqua 700P für Home Assistant
 
+![Evoqua](custom_components/evoqua_700p/brand/icon.png)
+
 Lokale, ausschließlich lesende Custom Integration für die Evoqua / Wallace & Tiernan
 **DEPOLOX Pool E 700 P**. Einrichtung über die Home-Assistant-Oberfläche mit
 IP-Adresse, Modbus-TCP-Port und Auswahl der vorhandenen Messkanäle.
